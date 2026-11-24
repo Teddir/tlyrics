@@ -4,7 +4,7 @@
     <meta charset="UTF-8" />
     <link rel="stylesheet" href="styles.css" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>TLyrics - Universal Music Companion</title>
+    <title>TLyrics - Spotube Universal Lyrics</title>
     <script type="module" src="/main.js" defer></script>
   </head>
 
@@ -13,7 +13,7 @@
       <header class="app-header">
         <div class="brand">
           <span class="brand-title">TLyrics</span>
-          <span class="brand-tag">Phase 2 Universal</span>
+          <span class="brand-tag">Phase 3 Synced</span>
         </div>
         <div class="header-right">
           <div class="provider-selector-wrap">
@@ -87,9 +87,29 @@
         </div>
       </main>
 
+      <!-- Phase 3: Synchronized Lyrics Display -->
+      <section class="lyrics-card">
+        <div class="lyrics-header">
+          <div class="lyrics-title-wrap">
+            <h3 class="lyrics-title">Synchronized Lyrics</h3>
+            <span id="lyrics-badge" class="lyrics-badge badge-searching">Initializing...</span>
+          </div>
+          <div class="lyrics-preview-wrap">
+            <span class="preview-label">Next Line:</span>
+            <span id="lyrics-next-line" class="lyrics-next-text">-</span>
+          </div>
+        </div>
+        <div class="lyrics-scroll-container" id="lyrics-scroll-container">
+          <div id="lyrics-list" class="lyrics-list">
+            <div class="lyrics-empty">Waiting for active track playback...</div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Diagnostics Panel -->
       <section class="diagnostic-card">
         <div class="diagnostic-header">
-          <h3>Universal Architecture Diagnostics</h3>
+          <h3>Phase 3 Integration Diagnostics</h3>
           <div class="header-actions">
             <button id="btn-refresh" class="btn-refresh">Refresh State</button>
           </div>
@@ -97,7 +117,7 @@
         <table class="verification-table">
           <thead>
             <tr>
-              <th>Field / Architecture Point</th>
+              <th>Field / Component</th>
               <th>Status</th>
               <th>Resolved Value</th>
             </tr>

@@ -1,5 +1,8 @@
+pub mod lyrics;
 pub mod playback;
 
+use lyrics::engine::LyricsEngine;
+use lyrics::SyncedLyricsState;
 use playback::manager::PlaybackManager;
 use playback::{PlaybackCommand, PlaybackState, ProviderDescriptor};
 use std::sync::Arc;
@@ -43,6 +46,15 @@ fn set_active_provider(
     manager.set_active_provider(provider_id)
 }
 
+#[tauri::command]
+fn get_synced_lyrics(
+    engine: State<'_, Arc<LyricsEngine>>,
+    manager: State<'_, Arc<PlaybackManager>>,
+) -> Result<SyncedLyricsState, String> {
+    let state = manager.get_state()?;
+    Ok(engine.update_playback(&state))
+}
+
 // Backward-compatible alias for Phase 1
 #[tauri::command]
 fn get_spotube_playback_state(
@@ -62,20 +74,25 @@ fn send_media_control(
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     let playback_manager = Arc::new(PlaybackManager::new());
+    let lyrics_engine = Arc::new(LyricsEngine::new());
 
     tauri::Builder::default()
         .plugin(tauri_plugin_opener::init())
         .manage(playback_manager.clone())
+        .manage(lyrics_engine.clone())
         .setup(move |app| {
             let app_handle = app.handle().clone();
             let manager = playback_manager;
+            let engine = lyrics_engine;
 
             std::thread::spawn(move || {
                 loop {
                     if let Ok(state) = manager.get_state() {
+                        let lyrics_state = engine.update_playback(&state);
                         let _ = app_handle.emit("playback-state", &state);
+                        let _ = app_handle.emit("lyrics-state", &lyrics_state);
                     }
-                    std::thread::sleep(Duration::from_millis(500));
+                    std::thread::sleep(Duration::from_millis(300));
                 }
             });
             Ok(())
@@ -85,6 +102,7 @@ pub fn run() {
             send_playback_command,
             get_playback_providers,
             set_active_provider,
+            get_synced_lyrics,
             get_spotube_playback_state,
             send_media_control
         ])

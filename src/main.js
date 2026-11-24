@@ -1,7 +1,9 @@
 const { invoke } = window.__TAURI__.core;
 const eventModule = window.__TAURI__.event;
 
-let lastState = null;
+let lastPlaybackState = null;
+let lastLyricsState = null;
+let currentRenderedFingerprint = null;
 let smoothPosition = 0;
 
 function formatTime(seconds) {
@@ -11,73 +13,65 @@ function formatTime(seconds) {
   return `${mins}:${secs.toString().padStart(2, "0")}`;
 }
 
-function updateVerificationTable(state) {
+function updateVerificationTable(playbackState, lyricsState) {
   const tbody = document.getElementById("verification-body");
   if (!tbody) return;
 
-  const track = state.track;
-  const isDetected = state.is_detected;
+  const track = playbackState?.track;
+  const isDetected = playbackState?.is_detected;
 
   const fields = [
     {
-      name: "Resolved Provider ID",
+      name: "Active Provider",
       status: "Active",
       statusClass: "badge-verified",
-      value: `${state.providerId} (${state.providerName})`,
+      value: `${playbackState?.providerId || "-"} (${playbackState?.providerName || "-"})`,
     },
     {
       name: "Source Application",
       status: isDetected ? "Connected" : "Idle",
       statusClass: isDetected ? "badge-verified" : "badge-empty",
-      value: `${state.appName || "-"} [${state.bundleId || "-"}]`,
+      value: `${playbackState?.appName || "-"} [${playbackState?.bundleId || "-"}]`,
     },
     {
-      name: "Song Title",
+      name: "Current Song",
       status: track?.title ? "Resolved" : "None",
       statusClass: track?.title ? "badge-verified" : "badge-empty",
-      value: track?.title || "No track title detected",
-    },
-    {
-      name: "Artist",
-      status: track?.artist ? "Resolved" : "None",
-      statusClass: track?.artist ? "badge-verified" : "badge-empty",
-      value: track?.artist || "No artist detected",
-    },
-    {
-      name: "Album",
-      status: track?.album ? "Resolved" : "Verified Empty",
-      statusClass: track?.album ? "badge-verified" : "badge-empty",
-      value: track?.album ? track.album : "None (Spotube omitted album metadata - not fabricated)",
+      value: track ? `${track.title} - ${track.artist}` : "None",
     },
     {
       name: "Track Fingerprint",
       status: track ? "Computed" : "None",
       statusClass: track ? "badge-verified" : "badge-empty",
-      value: track ? `${track.title.trim().toLowerCase()}::${track.artist.trim().toLowerCase()}::${track.durationSecs.toFixed(1)}` : "None",
+      value: lyricsState?.trackFingerprint || "None",
     },
     {
-      name: "Artwork",
-      status: track?.artworkDataUrl ? "Verified" : "Not Provided",
-      statusClass: track?.artworkDataUrl ? "badge-verified" : "badge-empty",
-      value: track?.artworkDataUrl ? `JPEG Base64 (${Math.round(track.artworkDataUrl.length / 1024)} KB)` : "None",
+      name: "Lyrics Sync Mode",
+      status: lyricsState ? lyricsState.lyricsType.toUpperCase() : "SEARCHING",
+      statusClass: lyricsState?.lyricsType === "synced" ? "badge-verified" : "badge-empty",
+      value: lyricsState ? `${lyricsState.lyricsType} (${lyricsState.lines.length} lines)` : "Searching LRCLIB...",
     },
     {
-      name: "Duration",
-      status: track?.durationSecs > 0 ? "Verified" : "Waiting",
-      statusClass: track?.durationSecs > 0 ? "badge-verified" : "badge-empty",
-      value: track?.durationSecs > 0 ? `${track.durationSecs.toFixed(2)}s (${formatTime(track.durationSecs)})` : "0.00s",
+      name: "Current Lyric Line",
+      status: lyricsState?.currentLine ? "Synchronized" : "Waiting",
+      statusClass: lyricsState?.currentLine ? "badge-verified" : "badge-empty",
+      value: lyricsState?.currentLine
+        ? `[${lyricsState.currentLine.timeSecs.toFixed(2)}s] ${lyricsState.currentLine.text}`
+        : "None (Intro / Interlude)",
+    },
+    {
+      name: "Next Lyric Line",
+      status: lyricsState?.nextLine ? "Queued" : "None",
+      statusClass: lyricsState?.nextLine ? "badge-verified" : "badge-empty",
+      value: lyricsState?.nextLine
+        ? `[${lyricsState.nextLine.timeSecs.toFixed(2)}s] ${lyricsState.nextLine.text}`
+        : "None (End of Track)",
     },
     {
       name: "Playback Position",
       status: isDetected ? "Live" : "Idle",
       statusClass: isDetected ? "badge-verified" : "badge-empty",
-      value: `${state.positionSecs.toFixed(2)}s (${formatTime(state.positionSecs)})`,
-    },
-    {
-      name: "Playback Status",
-      status: state.status.toUpperCase(),
-      statusClass: state.status === "playing" ? "badge-verified" : "badge-empty",
-      value: state.status.toUpperCase(),
+      value: playbackState ? `${playbackState.positionSecs.toFixed(2)}s (${formatTime(playbackState.positionSecs)})` : "0.00s",
     },
   ];
 
@@ -94,9 +88,9 @@ function updateVerificationTable(state) {
     .join("");
 }
 
-function renderPlaybackState(state) {
+function renderPlayback(state) {
   if (!state) return;
-  lastState = state;
+  lastPlaybackState = state;
   smoothPosition = state.positionSecs || 0;
 
   // Status Badge
@@ -164,35 +158,118 @@ function renderPlaybackState(state) {
   }
 
   updateProgress();
-  updateVerificationTable(state);
+  updateVerificationTable(lastPlaybackState, lastLyricsState);
+}
+
+function renderLyrics(lyricsState) {
+  if (!lyricsState) return;
+  lastLyricsState = lyricsState;
+
+  const badgeEl = document.getElementById("lyrics-badge");
+  const nextLineEl = document.getElementById("lyrics-next-line");
+  const listContainer = document.getElementById("lyrics-list");
+
+  // Next Line preview
+  if (lyricsState.nextLine) {
+    nextLineEl.textContent = lyricsState.nextLine.text;
+  } else {
+    nextLineEl.textContent = lyricsState.hasLyrics ? "(End of track)" : "-";
+  }
+
+  // Badge Status
+  badgeEl.className = "lyrics-badge";
+  if (lyricsState.lyricsType === "synced") {
+    badgeEl.classList.add("badge-synced");
+    badgeEl.textContent = "Synced (LRCLIB)";
+  } else if (lyricsState.lyricsType === "plain") {
+    badgeEl.classList.add("badge-plain");
+    badgeEl.textContent = "Plain Lyrics";
+  } else if (lyricsState.lyricsType === "instrumental") {
+    badgeEl.classList.add("badge-instrumental");
+    badgeEl.textContent = "Instrumental";
+  } else {
+    badgeEl.classList.add("badge-searching");
+    badgeEl.textContent = lyricsState.trackFingerprint ? "No Lyrics Found" : "Searching...";
+  }
+
+  // Re-render lines if track changed
+  if (currentRenderedFingerprint !== lyricsState.trackFingerprint) {
+    currentRenderedFingerprint = lyricsState.trackFingerprint;
+
+    if (!lyricsState.hasLyrics || lyricsState.lines.length === 0) {
+      if (lyricsState.lyricsType === "instrumental") {
+        listContainer.innerHTML = `<div class="lyrics-empty">Instrumental track (No lyrics)</div>`;
+      } else if (!lyricsState.trackFingerprint) {
+        listContainer.innerHTML = `<div class="lyrics-empty">Waiting for active track playback...</div>`;
+      } else {
+        listContainer.innerHTML = `<div class="lyrics-empty">No lyrics available for this track on LRCLIB</div>`;
+      }
+      return;
+    }
+
+    listContainer.innerHTML = lyricsState.lines
+      .map(
+        (line, idx) => `
+      <div class="lyric-line" id="lyric-line-${idx}" data-time="${line.timeSecs}">
+        ${line.text || "♪"}
+      </div>
+    `
+      )
+      .join("");
+  }
+
+  // Highlight and scroll active line
+  const activeIdx = lyricsState.currentLineIndex;
+  const lineEls = listContainer.querySelectorAll(".lyric-line");
+
+  lineEls.forEach((el, idx) => {
+    el.classList.remove("active", "past", "future");
+    if (activeIdx !== null && activeIdx !== undefined) {
+      if (idx === activeIdx) {
+        el.classList.add("active");
+        el.scrollIntoView({ behavior: "smooth", block: "center" });
+      } else if (idx < activeIdx) {
+        el.classList.add("past");
+      } else {
+        el.classList.add("future");
+      }
+    } else {
+      el.classList.add("future");
+    }
+  });
+
+  updateVerificationTable(lastPlaybackState, lastLyricsState);
 }
 
 function updateProgress() {
-  if (!lastState || !lastState.track || lastState.track.durationSecs <= 0) {
+  if (!lastPlaybackState || !lastPlaybackState.track || lastPlaybackState.track.durationSecs <= 0) {
     document.getElementById("current-time").textContent = "0:00";
     document.getElementById("progress-bar-fill").style.width = "0%";
     return;
   }
 
-  const duration = lastState.track.durationSecs;
+  const duration = lastPlaybackState.track.durationSecs;
   const pct = Math.min(100, Math.max(0, (smoothPosition / duration) * 100));
   document.getElementById("current-time").textContent = formatTime(smoothPosition);
   document.getElementById("progress-bar-fill").style.width = `${pct}%`;
 }
 
-async function fetchState() {
+async function fetchAll() {
   try {
-    const state = await invoke("get_playback_state");
-    renderPlaybackState(state);
+    const pState = await invoke("get_playback_state");
+    renderPlayback(pState);
+
+    const lState = await invoke("get_synced_lyrics");
+    renderLyrics(lState);
   } catch (err) {
-    console.error("Failed to query playback state:", err);
+    console.error("Failed to query state:", err);
   }
 }
 
 async function sendCommand(cmd) {
   try {
     await invoke("send_playback_command", { command: cmd });
-    setTimeout(fetchState, 150);
+    setTimeout(fetchAll, 150);
   } catch (err) {
     console.error(`Failed to send command ${cmd}:`, err);
   }
@@ -203,7 +280,7 @@ async function handleProviderChange(event) {
   const providerId = value === "auto" ? null : value;
   try {
     await invoke("set_active_provider", { providerId });
-    await fetchState();
+    await fetchAll();
   } catch (err) {
     console.error("Failed to switch provider:", err);
   }
@@ -213,31 +290,34 @@ window.addEventListener("DOMContentLoaded", async () => {
   document.getElementById("btn-prev")?.addEventListener("click", () => sendCommand("prev"));
   document.getElementById("btn-play-pause")?.addEventListener("click", () => sendCommand("toggle"));
   document.getElementById("btn-next")?.addEventListener("click", () => sendCommand("next"));
-  document.getElementById("btn-refresh")?.addEventListener("click", fetchState);
+  document.getElementById("btn-refresh")?.addEventListener("click", fetchAll);
   document.getElementById("provider-select")?.addEventListener("change", handleProviderChange);
 
   // Subscribe to background push events if available
   if (eventModule && eventModule.listen) {
     try {
       await eventModule.listen("playback-state", (event) => {
-        renderPlaybackState(event.payload);
+        renderPlayback(event.payload);
+      });
+      await eventModule.listen("lyrics-state", (event) => {
+        renderLyrics(event.payload);
       });
     } catch (e) {
       console.warn("Event listen not available:", e);
     }
   }
 
-  // Immediate query
-  await fetchState();
+  // Initial fetch
+  await fetchAll();
 
   // Smooth progress interpolation
   setInterval(() => {
-    if (lastState && lastState.status === "playing" && lastState.track) {
-      smoothPosition = Math.min(lastState.track.durationSecs, smoothPosition + 0.25);
+    if (lastPlaybackState && lastPlaybackState.status === "playing" && lastPlaybackState.track) {
+      smoothPosition = Math.min(lastPlaybackState.track.durationSecs, smoothPosition + 0.25);
       updateProgress();
     }
   }, 250);
 
-  // Periodic fallback poll
-  setInterval(fetchState, 1000);
+  // Fallback periodic poll
+  setInterval(fetchAll, 1000);
 });
