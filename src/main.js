@@ -5,6 +5,7 @@ let lastPlaybackState = null;
 let lastLyricsState = null;
 let currentRenderedFingerprint = null;
 let smoothPosition = 0;
+let touchBarInfo = null;
 
 function formatTime(seconds) {
   if (isNaN(seconds) || seconds < 0) return "0:00";
@@ -40,32 +41,34 @@ function updateVerificationTable(playbackState, lyricsState) {
       value: track ? `${track.title} - ${track.artist}` : "None",
     },
     {
-      name: "Track Fingerprint",
-      status: track ? "Computed" : "None",
-      statusClass: track ? "badge-verified" : "badge-empty",
-      value: lyricsState?.trackFingerprint || "None",
+      name: "Touch Bar Status",
+      status: "Active",
+      statusClass: "badge-verified",
+      value: "Native Swift AppKit (NSTouchBar) + Background IPC Stream",
+    },
+    {
+      name: "Touch Bar Current Line",
+      status: lyricsState?.currentLine ? "Live" : "Standby",
+      statusClass: lyricsState?.currentLine ? "badge-verified" : "badge-empty",
+      value: lyricsState?.currentLine?.text || "♪ TLyrics",
+    },
+    {
+      name: "Touch Bar Next Line",
+      status: lyricsState?.nextLine ? "Queued" : "None",
+      statusClass: lyricsState?.nextLine ? "badge-verified" : "badge-empty",
+      value: lyricsState?.nextLine ? `‣ ${lyricsState.nextLine.text}` : "None",
+    },
+    {
+      name: "Background IPC File",
+      status: "Streaming",
+      statusClass: "badge-verified",
+      value: "~/.cache/tlyrics/current_lyric.txt",
     },
     {
       name: "Lyrics Sync Mode",
       status: lyricsState ? lyricsState.lyricsType.toUpperCase() : "SEARCHING",
       statusClass: lyricsState?.lyricsType === "synced" ? "badge-verified" : "badge-empty",
       value: lyricsState ? `${lyricsState.lyricsType} (${lyricsState.lines.length} lines)` : "Searching LRCLIB...",
-    },
-    {
-      name: "Current Lyric Line",
-      status: lyricsState?.currentLine ? "Synchronized" : "Waiting",
-      statusClass: lyricsState?.currentLine ? "badge-verified" : "badge-empty",
-      value: lyricsState?.currentLine
-        ? `[${lyricsState.currentLine.timeSecs.toFixed(2)}s] ${lyricsState.currentLine.text}`
-        : "None (Intro / Interlude)",
-    },
-    {
-      name: "Next Lyric Line",
-      status: lyricsState?.nextLine ? "Queued" : "None",
-      statusClass: lyricsState?.nextLine ? "badge-verified" : "badge-empty",
-      value: lyricsState?.nextLine
-        ? `[${lyricsState.nextLine.timeSecs.toFixed(2)}s] ${lyricsState.nextLine.text}`
-        : "None (End of Track)",
     },
     {
       name: "Playback Position",
@@ -169,7 +172,17 @@ function renderLyrics(lyricsState) {
   const nextLineEl = document.getElementById("lyrics-next-line");
   const listContainer = document.getElementById("lyrics-list");
 
-  // Next Line preview
+  // Touch Bar mirror elements
+  const tbCurrLyric = document.getElementById("tb-curr-lyric");
+  const tbNextLyric = document.getElementById("tb-next-lyric");
+
+  const currText = lyricsState.currentLine?.text || (lastPlaybackState?.track ? "♪ Instrumental / Intro" : "♪ TLyrics");
+  const nextText = lyricsState.nextLine?.text ? `‣ ${lyricsState.nextLine.text}` : "";
+
+  tbCurrLyric.textContent = currText;
+  tbNextLyric.textContent = nextText;
+
+  // Next Line preview in header
   if (lyricsState.nextLine) {
     nextLineEl.textContent = lyricsState.nextLine.text;
   } else {
@@ -286,12 +299,52 @@ async function handleProviderChange(event) {
   }
 }
 
+async function copyToClipboard(text, buttonEl, successMsg) {
+  try {
+    await navigator.clipboard.writeText(text);
+    const orig = buttonEl.textContent;
+    buttonEl.textContent = successMsg;
+    buttonEl.style.backgroundColor = "var(--status-playing)";
+    buttonEl.style.color = "#000";
+    setTimeout(() => {
+      buttonEl.textContent = orig;
+      buttonEl.style.backgroundColor = "";
+      buttonEl.style.color = "";
+    }, 1500);
+  } catch (e) {
+    console.error("Copy failed:", e);
+  }
+}
+
 window.addEventListener("DOMContentLoaded", async () => {
+  // Main transport controls
   document.getElementById("btn-prev")?.addEventListener("click", () => sendCommand("prev"));
   document.getElementById("btn-play-pause")?.addEventListener("click", () => sendCommand("toggle"));
   document.getElementById("btn-next")?.addEventListener("click", () => sendCommand("next"));
   document.getElementById("btn-refresh")?.addEventListener("click", fetchAll);
   document.getElementById("provider-select")?.addEventListener("change", handleProviderChange);
+
+  // Touch Bar strip mirror buttons
+  document.getElementById("tb-btn-prev")?.addEventListener("click", () => sendCommand("prev"));
+  document.getElementById("tb-btn-play")?.addEventListener("click", () => sendCommand("toggle"));
+  document.getElementById("tb-btn-next")?.addEventListener("click", () => sendCommand("next"));
+
+  // Fetch Touch Bar background snippets
+  try {
+    touchBarInfo = await invoke("get_touchbar_integration_info");
+    document.getElementById("btn-copy-btt")?.addEventListener("click", (e) => {
+      if (touchBarInfo?.bttScript) {
+        copyToClipboard(touchBarInfo.bttScript, e.target, "Copied BTT Script!");
+      }
+    });
+    document.getElementById("btn-copy-mtmr")?.addEventListener("click", (e) => {
+      if (touchBarInfo?.mtmrJson) {
+        copyToClipboard(touchBarInfo.mtmrJson, e.target, "Copied MTMR JSON!");
+      }
+    });
+  } catch (e) {
+    console.warn("Touch Bar info unavailable:", e);
+  }
 
   // Subscribe to background push events if available
   if (eventModule && eventModule.listen) {

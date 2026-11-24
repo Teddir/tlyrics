@@ -13,7 +13,7 @@
       <header class="app-header">
         <div class="brand">
           <span class="brand-title">TLyrics</span>
-          <span class="brand-tag">Phase 3 Synced</span>
+          <span class="brand-tag">Phase 4 Touch Bar</span>
         </div>
         <div class="header-right">
           <div class="provider-selector-wrap">
@@ -87,6 +87,44 @@
         </div>
       </main>
 
+      <!-- Phase 4: Touch Bar Live Mirror & Status -->
+      <section class="touchbar-card">
+        <div class="touchbar-header">
+          <div class="touchbar-title-wrap">
+            <h3 class="touchbar-title">macOS Touch Bar Status</h3>
+            <span id="touchbar-badge" class="touchbar-badge">Native AppKit Active</span>
+          </div>
+          <span class="touchbar-subtext">Physical Touch Bar Mirror</span>
+        </div>
+
+        <!-- Visual representation of the physical Touch Bar -->
+        <div class="touchbar-strip">
+          <div class="touchbar-controls">
+            <div class="tb-btn" id="tb-btn-prev">⏮</div>
+            <div class="tb-btn" id="tb-btn-play">⏯</div>
+            <div class="tb-btn" id="tb-btn-next">⏭</div>
+          </div>
+          <div class="touchbar-lyrics-area">
+            <span id="tb-curr-lyric" class="tb-curr-text">♪ TLyrics</span>
+            <span id="tb-next-lyric" class="tb-next-text"></span>
+          </div>
+        </div>
+
+        <div class="touchbar-bg-info">
+          <div class="bg-info-header">
+            <strong>Background Touch Bar Integration (BetterTouchTool / MTMR / Pock):</strong>
+          </div>
+          <p class="bg-info-desc">
+            macOS restricts background apps from claiming the Touch Bar when unfocused. TLyrics automatically streams real-time lyrics to local IPC files for background utilities:
+          </p>
+          <div class="ipc-path-row">
+            <code>~/.cache/tlyrics/current_lyric.txt</code>
+            <button class="btn-copy" id="btn-copy-btt" title="Copy BTT Script">Copy BTT Script</button>
+            <button class="btn-copy" id="btn-copy-mtmr" title="Copy MTMR JSON">Copy MTMR JSON</button>
+          </div>
+        </div>
+      </section>
+
       <!-- Phase 3: Synchronized Lyrics Display -->
       <section class="lyrics-card">
         <div class="lyrics-header">
@@ -109,7 +147,7 @@
       <!-- Diagnostics Panel -->
       <section class="diagnostic-card">
         <div class="diagnostic-header">
-          <h3>Phase 3 Integration Diagnostics</h3>
+          <h3>Phase 4 System Diagnostics</h3>
           <div class="header-actions">
             <button id="btn-refresh" class="btn-refresh">Refresh State</button>
           </div>
