@@ -1,11 +1,11 @@
-# TLyrics — Universal Synchronized Lyrics & Touch Bar Companion for macOS
+# TLyrics — Synchronized Audio Text & Touch Bar Companion for macOS
 
 <p align="center">
   <img src="src-tauri/icons/128x128@2x.png" alt="TLyrics Logo" width="100" />
 </p>
 
 <p align="center">
-  <strong>A lightweight, menu-bar-only macOS companion that displays real-time synchronized lyrics on your screen and physical MacBook Touch Bar.</strong>
+  <strong>A lightweight, menu-bar-only macOS companion that displays real-time synchronized text and lyrics on your screen and physical MacBook Touch Bar.</strong>
 </p>
 
 <p align="center">
@@ -13,40 +13,69 @@
   <a href="https://github.com/Teddir/tlyrics"><img src="https://img.shields.io/badge/arch-Apple%20Silicon%20%7C%20Intel-success" alt="Apple Silicon & Intel"></a>
   <a href="https://tauri.app/"><img src="https://img.shields.io/badge/built%20with-Tauri%20v2-24C8DB?logo=tauri" alt="Tauri 2"></a>
   <a href="https://www.rust-lang.org/"><img src="https://img.shields.io/badge/backend-Rust%202024-DEA584?logo=rust" alt="Rust"></a>
-  <a href="https://lrclib.net/"><img src="https://img.shields.io/badge/lyrics-LRCLIB-blueviolet" alt="LRCLIB"></a>
   <a href="LICENSE"><img src="https://img.shields.io/badge/license-MIT-green" alt="MIT License"></a>
 </p>
 
 ---
 
-## 📖 Overview
-
-**TLyrics** is a native macOS background application and synchronized lyrics engine designed with a **Spotube-first** architecture and universal macOS playback detection. Built with **Tauri 2**, **Rust**, **AppKit / Swift**, and vanilla web technologies, TLyrics delivers synchronized lyrics straight to a minimal companion window and your physical **MacBook Touch Bar** without draining system resources.
-
-TLyrics runs as a **macOS Agent / Menu Bar application** (`LSUIElement = true`): it lives entirely in your menu bar and background, completely free of Dock clutter.
+> ### 🌿 Catatan Fiqih & Niat Pengembang (Islamic Perspective)
+> 
+> *Bismillahirahmanirrahim.*
+>
+> Proyek ini dibangun dari sudut pandang seorang Muslim yang berpegang teguh pada pandangan mayoritas ulama salaf dan empat madzhab (*jumhur ulama*) mengenai **keharaman alat-alat musik (*ma'azif*)**. 
+>
+> **TLyrics** diciptakan sebagai sebuah **wasilah teknologi (alat netral)** untuk membantu pengguna mengikuti kata demi kata dari audio yang bermanfaat—seperti **nasyid tanpa instrumen musik (vocal only / acapella)**, **rekaman kajian ilmiah / khutbah**, **podcast edukatif**, **audiobook**, maupun **pembelajaran bahasa**—langsung melalui physical Touch Bar MacBook dan jendela pendamping minimalis.
+>
+> Meskipun TLyrics secara teknis mendukung protokol Now Playing macOS dan database LRC (seperti LRCLIB) yang umum digunakan untuk lagu/musik, pengembang berlepas diri dari penggunaan aplikasi ini untuk hal-hal yang melanggar syariat Allah ﷻ. Setiap pendengaran dan perbuatan manusia akan dimintai pertanggungjawaban di hadapan-Nya:
+>
+> <p align="center">
+>   <strong>إِنَّ السَّمْعَ وَالْبَصَرَ وَالْفُؤَادَ كُلُّ أُولَٰئِكَ كَانَ عَنْهُ مَسْئُولًا</strong><br>
+>   <em>"Sesungguhnya pendengaran, penglihatan, dan hati, semuanya itu akan dimintai pertanggungjawabannya."</em><br>
+>   <strong>(QS. Al-Isra [17]: 36)</strong>
+> </p>
 
 ---
 
-## ✨ Features
+## 📖 Ringkasan / Overview
 
-| Feature | Description |
+**TLyrics** adalah aplikasi latar belakang (*background agent*) untuk macOS yang menyinkronkan teks dan lirik audio secara real-time. Dibangun menggunakan **Tauri 2**, **Rust**, **AppKit / Swift**, dan web standards (Vanilla JS/CSS/HTML), TLyrics menghadirkan tampilan teks tersinkronisasi pada **MacBook Touch Bar** dan *floating companion window* tanpa membebani daya baterai dan memori.
+
+TLyrics berjalan sebagai aplikasi **macOS Menu Bar Agent** murni (`LSUIElement = true`): tanpa ikon di macOS Dock, tidak mengganggu produktivitas, dan memantau pemutaran audio di latar belakang.
+
+---
+
+## 🎧 Pemanfaatan Konten yang Direkomendasikan (Supported & Encouraged Content)
+
+Aplikasi ini ditujukan untuk mempermudah membaca dan memahami konten audio yang bermanfaat:
+
+* **Nasyid & Qasidah Tanpa Musik (Vocal Only / Acapella):** Menghafal dan menyimak syair-syair Islami yang baik.
+* **Kajian Ilmiah, Khutbah & Ceramah:** Mengikuti transkrip atau poin penting materi kajian.
+* **Podcast Edukasi & Diskusi:** Mengikuti percakapan audio tanpa harus berpindah jendela aplikasi.
+* **Audiobook & Buku Suara:** Membantu konsentrasi membaca bersamaan dengan mendengarkan.
+* **Pembelajaran Bahasa Asing:** Mencocokkan pelafalan (*listening*) dengan teks tertulis secara tepat waktu.
+
+---
+
+## ✨ Fitur Utama (Features)
+
+| Fitur | Deskripsi |
 | :--- | :--- |
-| **🎵 Spotube-First & Universal Detection** | Dedicated zero-latency position tracking for Spotube with automatic fallback to macOS System Media (Apple Music, Spotify, browsers). |
-| **📜 Synchronized LRCLIB Retrieval** | Automatic fetching, subtitle cleaning, fuzzy title matching, chronological LRC parsing, and local disk/memory caching. |
-| **💻 Global Physical Touch Bar Integration** | Native Swift & AppKit `NSTouchBar` (`DFRFoundation`) integration displaying current and upcoming lyrics across any active application (Safari, Terminal, VS Code, Finder). |
-| **🔌 Third-Party Touch Bar IPC** | Continuous background streaming to `~/.cache/tlyrics/current_lyric.txt` and `touchbar.json` for one-click **BetterTouchTool (BTT)**, **MTMR**, or **Pock** integration. |
-| **🎛️ Menu Bar Only / Dock-Free Agent** | Operates as a true background accessory (`LSUIElement = true`) without a Dock icon. Window hide-on-close ensures persistent monitoring. |
-| **🎨 Minimal Lyrics Companion UI** | Distraction-free 3-line focus layout (previous, current, next) with Apple system typography, smooth transitions, and customizable font size and timing offset (+/- ms). |
-| **⚡ High Performance & Low Overhead** | Minimal CPU footprint, debounced metadata tracking, lazy-loaded artwork, and zero-waste DOM rendering. |
+| **🎵 Universal Now Playing Detection** | Integrasi mendalam dengan Spotube dan macOS System Media (Apple Music, Spotify, Browser media) via native `MediaRemote`. |
+| **📜 Sinkronisasi LRC & LRCLIB** | Pengambilan lirik otomatis, pembersihan subtitle, pemilahan baris kronologis, dan cache lokal di `~/.cache/tlyrics/lyrics`. |
+| **💻 Global Physical Touch Bar Display** | Integrasi native AppKit / Swift (`DFRFoundation` & `NSTouchBar`) menampilkan baris teks saat ini dan baris berikutnya secara terus-menerus melintasi seluruh aplikasi (Safari, VS Code, Finder, Terminal). |
+| **🔌 IPC untuk Third-Party Tools** | Mengalirkan baris lirik real-time ke file `~/.cache/tlyrics/current_lyric.txt` dan `touchbar.json` untuk pengguna **BetterTouchTool (BTT)**, **MTMR**, atau **Pock**. |
+| **🎛️ Menu Bar Only (Bebas Dock)** | Berjalan sebagai agen latar belakang murni (`LSUIElement = true`). Menutup jendela utama hanya menyembunyikannya (*hide*), aplikasi tetap hidup di Menu Bar. |
+| **🎨 Tampilan Companion 3-Line Minimalis** | Desain modern gelap khas macOS dengan fokus 3 baris: baris sebelumnya (*faint*), baris aktif (*prominent glow*), dan baris berikutnya. Dilengkapi pengaturan ukuran font dan timing offset (+/- ms). |
+| **⚡ Sangat Ringan & Efisien** | Ditulis dalam Rust murni tanpa React/Electron, penggunaan CPU mendekati 0%, pembaruan DOM hanya dilakukan saat ada pergantian baris/lagu. |
 
 ---
 
-## 🏗️ Architecture & How It Works
+## 🏛️ Arsitektur & Alur Kerja
 
 ```
 ┌─────────────────────────────────────────────────────────────────┐
-│                     Audio & Music Sources                       │
-│    Spotube (Dedicated)  │  Apple Music  │  Spotify  │  Browsers │
+│                    Sumber Audio / Pemutar Audio                 │
+│         Spotube  │  Apple Music  │  Spotify  │  Browser         │
 └─────────────────────────────────┬───────────────────────────────┘
                                   ▼
                macOS Native MediaRemote & Now Playing
@@ -67,81 +96,80 @@ TLyrics runs as a **macOS Agent / Menu Bar application** (`LSUIElement = true`):
 
 ---
 
-## 💻 System Requirements
+## 💻 Kebutuhan Sistem (Requirements)
 
-* **Operating System:** macOS 13.0 (Ventura), macOS 14.0 (Sonoma), or macOS 15.0 (Sequoia) or later.
-* **Architecture:** Apple Silicon (M1/M2/M3/M4) or Intel (x86_64).
-* **Hardware:** Any Mac (MacBook Pro with physical Touch Bar recommended for Touch Bar features).
-* **Music Player:** [Spotube](https://spotube.krtirtho.dev/) (recommended), Apple Music, Spotify, or any media player supporting macOS Now Playing.
+* **Sistem Operasi:** macOS 13.0 (Ventura), macOS 14.0 (Sonoma), atau macOS 15.0 (Sequoia) ke atas.
+* **Arsitektur:** Apple Silicon (M1/M2/M3/M4) maupun Intel (x86_64).
+* **Perangkat Keras:** MacBook Pro dengan physical Touch Bar (opsional, tetap berfungsi sebagai companion di layar untuk Mac tanpa Touch Bar).
+* **Alat Pengembang:** Rust toolchain, Xcode Command Line Tools, dan Tauri CLI v2.
 
 ---
 
-## 🚀 Cloning and Building from Source
+## 🚀 Panduan Kloning & Kompilasi (Clone & Build Guide)
 
-### 1. Prerequisites
+Ikuti langkah-langkah di bawah ini untuk mengkloning dan membangun TLyrics dari sumber kode asli:
 
-Ensure you have the required developer tools installed on your Mac:
+### 1. Persiapan Alat Pengembang (Prerequisites)
+
+Buka aplikasi **Terminal** di Mac Anda dan pastikan dependensi berikut telah terpasang:
 
 ```bash
-# 1. Install Xcode Command Line Tools
+# 1. Pasang Xcode Command Line Tools
 xcode-select --install
 
-# 2. Install Rust toolchain (if not already installed)
+# 2. Pasang Rust toolchain (jika belum terpasang)
 curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
 source "$HOME/.cargo/env"
 
-# 3. Install Tauri CLI v2
+# 3. Pasang Tauri CLI v2
 cargo install tauri-cli --version "^2.0"
 ```
 
-### 2. Clone the Repository
+### 2. Kloning Repositori (Clone)
 
 ```bash
 git clone https://github.com/Teddir/tlyrics.git
 cd tlyrics
 ```
 
-### 3. Run in Development Mode
+### 3. Menjalankan Mode Pengembangan (Development)
 
-To start the application in hot-reloading development mode:
+Untuk menjalankan TLyrics dalam mode pengujian langsung dengan hot-reload:
 
 ```bash
 cargo tauri dev
 ```
 
-*Note: In development mode, macOS activation policy automatically hides the Dock icon and places TLyrics in the menu bar.*
+*Catatan: Pada mode pengujian, activation policy secara otomatis menyembunyikan ikon di Dock dan menempatkan TLyrics di Menu Bar.*
 
-### 4. Run Unit Tests
+### 4. Menjalankan Unit Tests
 
-TLyrics includes unit tests covering playback priority, track fingerprinting, LRC parsing, timing offset, and LRCLIB integration:
+TLyrics dilengkapi dengan pengujian otomatis (*unit tests*) untuk memastikan parsing LRC, cache, dan deteksi Now Playing bekerja sempurna:
 
 ```bash
 cd src-tauri
 cargo test -- --nocapture
 ```
 
-### 5. Build the Packaged macOS Application (`.app`)
+### 5. Membangun Paket Aplikasi macOS (`.app`)
 
-To produce the standalone macOS application bundle with full `LSUIElement` agent metadata:
+Untuk menghasilkan bundel aplikasi `.app` siap pakai dengan konfigurasi `LSUIElement = true` (Menu Bar Agent):
 
 ```bash
-# Debug bundle (fast build)
+# Versi Debug (cepat untuk dicoba)
 cargo tauri build -b app --debug
 
-# Production release bundle (optimized with LTO)
+# Versi Rilis / Release (dioptimasi penuh dengan LTO)
 cargo tauri build -b app
 ```
 
-The compiled application bundle will be located at:
-```bash
-src-tauri/target/release/bundle/macos/tlyrics.app
-# or for debug builds:
-src-tauri/target/debug/bundle/macos/tlyrics.app
-```
+Hasil bundel aplikasi berada di:
+* Rilis: `src-tauri/target/release/bundle/macos/tlyrics.app`
+* Debug: `src-tauri/target/debug/bundle/macos/tlyrics.app`
 
-### 6. Install to Applications
+### 6. Pemasangan ke `/Applications`
 
-You can copy the built application directly into your `/Applications` directory:
+Salin bundel aplikasi langsung ke folder aplikasi Mac:
 
 ```bash
 cp -r src-tauri/target/release/bundle/macos/tlyrics.app /Applications/
@@ -150,78 +178,73 @@ open /Applications/tlyrics.app
 
 ---
 
-## 🛠️ Usage & Integration
+## ⚙️ Penggunaan & Konfigurasi
 
-### Menu Bar Controls
-Click the **TLyrics** icon in the macOS menu bar to access:
-* **Open Lyrics / Show/Hide Window:** Toggle the companion overlay.
-* **Current Track Information:** Real-time track title and artist name.
-* **Settings:** Configure timing offset, font size, start hidden, and autostart.
-* **Enable/Disable Touch Bar:** Toggle the native global Touch Bar mirror.
-* **Restart Lyrics Engine:** Flush cached track data and re-fetch lyrics from LRCLIB.
-* **Quit TLyrics:** Completely stops background workers, releases IPC handles, and terminates cleanly.
+### Menu Bar Tray
+Klik ikon **TLyrics** di Menu Bar macOS untuk mengakses menu interaktif:
+* **Open Lyrics:** Membuka dan memfokuskan jendela lirik 3-baris.
+* **Show/Hide Window:** Menyembunyikan atau menampilkan jendela secara cepat.
+* **Current Track Information:** Menampilkan judul audio dan artis yang sedang diputar secara real-time.
+* **Settings:** Mengatur offset waktu lirik (+/- ms), ukuran font, start hidden, dan launch at login.
+* **Enable/Disable Touch Bar:** Menghidupkan atau mematikan tampilan lirik di Touch Bar fisik.
+* **Restart Lyrics Engine:** Membersihkan memori/cache dan mengambil ulang lirik dari penyedia.
+* **Quit TLyrics:** Menutup seluruh proses latar belakang secara tuntas dan bersih.
 
-### BetterTouchTool (BTT) & MTMR Integration
-If you use third-party Touch Bar managers like [BetterTouchTool](https://folivora.ai/) or [MTMR](https://github.com/Toxblh/MTMR), TLyrics automatically streams the active lyric and next lyric to:
-* **Text stream:** `~/.cache/tlyrics/current_lyric.txt`
-* **JSON state:** `~/.cache/tlyrics/touchbar.json`
+### Integrasi BetterTouchTool (BTT) / MTMR
+Jika Anda memakai kustomisasi Touch Bar pihak ketiga, TLyrics secara konstan menulis lirik aktif ke:
+* **Teks aktif:** `~/.cache/tlyrics/current_lyric.txt`
+* **Format JSON:** `~/.cache/tlyrics/touchbar.json`
 
-**Sample BTT Shell Script Widget:**
+**Skrip Shell untuk Widget BTT:**
 ```bash
 cat ~/.cache/tlyrics/current_lyric.txt 2>/dev/null || echo "♪ TLyrics"
 ```
 
 ---
 
-## 🗺️ Project Roadmap
+## 📜 Dalil Fiqih Mengenai Musik (The Scholarly Evidence)
 
-- [x] **Phase 1:** Spotube-specific playback detection via macOS Now Playing.
-- [x] **Phase 2:** Universal playback provider architecture with priority routing.
-- [x] **Phase 3:** LRCLIB integration, chronological LRC parsing, and local caching.
-- [x] **Phase 4:** Native macOS Touch Bar integration (`AppKit` / `DFRFoundation`) & IPC streaming.
-- [x] **Phase 5:** Minimalist macOS dark companion interface & timing offset control.
-- [x] **Phase 6:** Background agent operation & Dock-free Menu Bar application (`LSUIElement`).
-- [ ] **Phase 7:** Romanized / translation lyrics support & multi-source lyrics fallbacks.
+Sebagai pengingat bagi sesama Muslim, berikut adalah beberapa dalil yang mendasari pandangan kami mengenai alat-alat musik:
+
+1. **Hadits Shahih Al-Bukhari (No. 5590):**
+   > Rasulullah ﷺ bersabda:
+   > 
+   > **لَيَكُونَنَّ مِنْ أُمَّتِي أَقْوَامٌ يَسْتَحِلُّونَ الْحِرَ وَالْحَرِيرَ وَالْخَمْرَ وَالْمَعَازِفَ**
+   > 
+   > *"Sungguh akan ada di kalangan umatku, kaum yang menghalalkan zina, sutra (bagi laki-laki), khamr, dan alat-alat musik (al-ma'azif)."*
+
+2. **Tafsir Sahabat Mengenai "Lahwal Hadits" (QS. Luqman [31]: 6):**
+   > Sahabat mulia Abdullah bin Mas'ud رضي الله عنه bersumpah:
+   > 
+   > **الْغِنَاءُ، وَاللَّهِ الَّذِي لَا إِلَهَ إِلَّا هُوَ**
+   > 
+   > *"Demi Allah yang tidak ada sesembahan yang berhak disembah selain Dia, yang dimaksud adalah nyanyian (dengan alat musik)."*
+
+Maka hendaknya setiap Muslim berhati-hati dalam menjaga indra pendengarannya dan mengarahkan teknologinya untuk menyimak perkataan yang bermanfaat dan diridhai Allah ﷻ.
 
 ---
 
-## 🤝 Contributing
+## 🌱 Niat & Doa Pengembang (Purpose & Sincere Intention)
 
-Contributions, bug reports, and suggestions are warmly welcome!
-1. Fork the repository.
-2. Create your feature branch (`git checkout -b feature/amazing-feature`).
-3. Commit your changes (`git commit -m 'feat: add amazing feature'`).
-4. Push to the branch (`git push origin feature/amazing-feature`).
-5. Open a Pull Request.
-
----
-
-## 🌱 Purpose & Intention
-
-As a Muslim developer, I believe technology is an *amanah* (trust) and an opportunity to create something genuinely beneficial for others.
-
-TLyrics is developed with the hope of making audio content and beneficial words more accessible:
-
-* **Ilmu yang Bermanfaat (علم نافع):** Making knowledge and lyrics easier to follow.
-* **Khidmah (خدمة):** Creating purposeful technology that serves daily lives.
-* **Ikhlas (إخلاص):** Developing and sharing with sincere intentions.
-* **Amal Jariyah (صدقة جارية):** Hoping the positive benefits of this work continue to help others.
-
-### 🤲 A Prayer
+Aplikasi ini dibangun dengan niat:
+* **Ilmu yang Bermanfaat (عِلْمٌ نَافِعٌ):** Menjadikan kata-kata yang baik dan bermanfaat lebih mudah disimak dan dipahami.
+* **Khidmah (خِدْمَةٌ):** Menghadirkan teknologi yang membantu kebaikan umat.
+* **Ikhlas (إِخْلَاصٌ):** Dikerjakan semata-mata mengharapkan wajah Allah ﷻ.
+* **Amal Jariyah (صَدَقَةٌ جَارِيَةٌ):** Berharap kebaikan teknis dari proyek ini menjadi tabungan amal shalih yang terus mengalir.
 
 <p align="center">
   <strong>اللَّهُمَّ اجْعَلْ هَذَا الْعَمَلَ عِلْمًا نَافِعًا وَعَمَلًا صَالِحًا</strong><br>
-  <em>"O Allah, make this work beneficial knowledge and a righteous deed."</em>
+  <em>"Ya Allah, jadikanlah karya ini sebagai ilmu yang bermanfaat dan amal yang shalih."</em>
 </p>
 
 ---
 
-## 📜 License & Copyright
+## 📄 Lisensi & Hak Cipta
 
-Distributed under the **MIT License**. See [`LICENSE`](file:///Users/mac/Documents/code/tlyrics/LICENSE) for more information.
+Didistribusikan di bawah **MIT License**. Lihat berkas [`LICENSE`](file:///Users/mac/Documents/code/tlyrics/LICENSE) untuk rincian lengkap.
 
-Copyright © 2026 **Teddi_r**. All rights reserved.
+Hak Cipta © 2026 **Teddi_r**. All rights reserved.
 
 <p align="center">
-  <strong>Built with purpose. Designed for elegance. Shared for the benefit of others.</strong>
+  <strong>Dibangun dengan niat yang lurus. Dirancang untuk kebaikan. Dibagikan untuk kemanfaatan sesama.</strong>
 </p>
