@@ -82,6 +82,30 @@ fn dismiss_global_touchbar(
     Ok(())
 }
 
+#[tauri::command]
+fn set_lyrics_offset(
+    offset_ms: i64,
+    engine: State<'_, Arc<LyricsEngine>>,
+) -> Result<(), String> {
+    engine.set_offset_ms(offset_ms);
+    Ok(())
+}
+
+#[tauri::command]
+fn get_lyrics_offset(
+    engine: State<'_, Arc<LyricsEngine>>,
+) -> Result<i64, String> {
+    Ok(engine.get_offset_ms())
+}
+
+#[tauri::command]
+fn clear_lyrics_cache(
+    engine: State<'_, Arc<LyricsEngine>>,
+) -> Result<(), String> {
+    engine.clear_cache();
+    Ok(())
+}
+
 // Backward-compatible alias for Phase 1
 #[tauri::command]
 fn get_spotube_playback_state(
@@ -221,6 +245,9 @@ pub fn run() {
             get_touchbar_integration_info,
             present_global_touchbar,
             dismiss_global_touchbar,
+            set_lyrics_offset,
+            get_lyrics_offset,
+            clear_lyrics_cache,
             get_spotube_playback_state,
             send_media_control
         ])

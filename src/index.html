@@ -2,172 +2,251 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <link rel="stylesheet" href="styles.css" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>TLyrics - Spotube Universal Lyrics</title>
+    <title>TLyrics</title>
+    <link rel="stylesheet" href="styles.css" />
     <script type="module" src="/main.js" defer></script>
   </head>
 
   <body>
-    <div class="app-container">
+    <div class="companion-shell">
+      <!-- Minimal macOS Header -->
       <header class="app-header">
         <div class="brand">
+          <svg class="brand-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M9 19V6l12-3v13M9 19c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zm12-3c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zM9 10l12-3" />
+          </svg>
           <span class="brand-title">TLyrics</span>
-          <span class="brand-tag">Phase 4 Touch Bar</span>
+          <span id="status-dot" class="status-dot status-idle" title="Playback Status: Idle"></span>
         </div>
-        <div class="header-right">
-          <div class="provider-selector-wrap">
-            <select id="provider-select" class="provider-select" title="Active Playback Provider">
+
+        <div class="header-actions">
+          <button id="btn-toggle-view" class="icon-btn" title="Toggle 3-Line / Full Lyrics" aria-label="Toggle View">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M4 6h16M4 12h16M4 18h16" />
+            </svg>
+          </button>
+          <button id="btn-toggle-settings" class="icon-btn" title="Settings" aria-label="Settings">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
+              <path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+            </svg>
+          </button>
+        </div>
+      </header>
+
+      <!-- Compact Track Information -->
+      <section class="track-strip">
+        <div class="artwork-thumb-wrap">
+          <img id="artwork-img" class="artwork-thumb hidden" alt="Artwork" />
+          <div id="artwork-placeholder" class="artwork-placeholder-thumb">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M9 19V6l12-3v13M9 19c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zm12-3c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zM9 10l12-3" />
+            </svg>
+          </div>
+        </div>
+
+        <div class="track-meta">
+          <div class="track-title-row">
+            <h1 id="track-title" class="track-title">No Track Playing</h1>
+            <span id="source-app-badge" class="source-badge">Spotube</span>
+          </div>
+          <h2 id="track-artist" class="track-artist">Connect music player to begin</h2>
+        </div>
+      </section>
+
+      <!-- Main Lyrics Area: Focused 3-Line Mode (Default) -->
+      <main class="lyrics-container">
+        <!-- 3-Line Focus View -->
+        <div id="lyrics-focus-view" class="lyrics-focus-view">
+          <div id="lyric-prev" class="lyric-line lyric-prev"></div>
+          <div id="lyric-curr" class="lyric-line lyric-curr">♪ TLyrics</div>
+          <div id="lyric-next" class="lyric-line lyric-next"></div>
+        </div>
+
+        <!-- Full Lyrics View (Toggled) -->
+        <div id="lyrics-full-view" class="lyrics-full-view hidden">
+          <div id="lyrics-full-list" class="lyrics-full-list"></div>
+        </div>
+
+        <!-- Status Overlays / Messages -->
+        <div id="lyrics-empty" class="lyrics-state-msg hidden">
+          <svg class="state-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z" />
+            <path stroke-linecap="round" stroke-linejoin="round" d="M17 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2" />
+          </svg>
+          <span class="state-title">No Music Playing</span>
+          <span class="state-desc">Play a track in Spotube or macOS Media to see synchronized lyrics.</span>
+        </div>
+
+        <div id="lyrics-loading" class="lyrics-state-msg hidden">
+          <div class="spinner"></div>
+          <span class="state-title">Searching Lyrics...</span>
+          <span class="state-desc">Querying LRCLIB database</span>
+        </div>
+
+        <div id="lyrics-fallback" class="lyrics-state-msg hidden">
+          <svg class="state-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 100-6 3 3 0 000 6z" />
+          </svg>
+          <span id="fallback-title" class="state-title">Instrumental Track</span>
+          <span id="fallback-desc" class="state-desc">No lyrics recorded for this song</span>
+        </div>
+      </main>
+
+      <!-- Minimal Playback Controls -->
+      <section class="playback-controls">
+        <button id="btn-prev" class="ctrl-btn" title="Previous Track (Cmd+Left)">
+          <svg viewBox="0 0 24 24" fill="currentColor">
+            <path d="M6 6h2v12H6zm3.5 6l8.5 6V6z"/>
+          </svg>
+        </button>
+
+        <button id="btn-play-pause" class="ctrl-btn ctrl-btn-primary" title="Play / Pause (Space)">
+          <svg id="icon-play" viewBox="0 0 24 24" fill="currentColor">
+            <path d="M8 5v14l11-7z"/>
+          </svg>
+          <svg id="icon-pause" class="hidden" viewBox="0 0 24 24" fill="currentColor">
+            <path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/>
+          </svg>
+        </button>
+
+        <button id="btn-next" class="ctrl-btn" title="Next Track (Cmd+Right)">
+          <svg viewBox="0 0 24 24" fill="currentColor">
+            <path d="M6 18l8.5-6L6 6v12zM16 6v12h2V6h-2z"/>
+          </svg>
+        </button>
+      </section>
+
+      <!-- Minimal Footer -->
+      <footer class="app-footer">
+        <div class="progress-bar-wrap" id="progress-track" title="Playback Progress">
+          <div id="progress-fill" class="progress-bar-fill"></div>
+        </div>
+
+        <div class="footer-meta-row">
+          <div class="time-meta">
+            <span id="time-display">0:00 / 0:00</span>
+          </div>
+          <div class="sync-meta">
+            <span id="sync-status" class="sync-status-badge">Idle</span>
+          </div>
+        </div>
+      </footer>
+
+      <!-- Settings Slide-over Panel -->
+      <aside id="settings-panel" class="settings-panel hidden">
+        <div class="settings-header">
+          <h3>Preferences</h3>
+          <button id="btn-close-settings" class="icon-btn" title="Close Settings">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          </button>
+        </div>
+
+        <div class="settings-body">
+          <!-- Playback Source -->
+          <div class="setting-item">
+            <div class="setting-text">
+              <label for="setting-provider" class="setting-title">Playback Provider</label>
+              <span class="setting-desc">Preferred music application</span>
+            </div>
+            <select id="setting-provider" class="setting-select">
               <option value="auto">Auto (Spotube-First)</option>
               <option value="spotube">Spotube (Dedicated)</option>
               <option value="macos_now_playing">macOS System Media</option>
             </select>
           </div>
-          <div id="status-badge" class="status-badge status-inactive">
-            <span class="status-dot"></span>
-            <span id="status-text">Connecting...</span>
-          </div>
-        </div>
-      </header>
 
-      <main class="player-card">
-        <div class="artwork-wrapper">
-          <div id="artwork-placeholder" class="artwork-placeholder">
-            <svg viewBox="0 0 24 24" class="music-icon" fill="none" stroke="currentColor" stroke-width="1.5">
-              <path stroke-linecap="round" stroke-linejoin="round" d="M9 19V6l12-3v13M9 19c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zm12-3c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zM9 10l12-3" />
-            </svg>
-          </div>
-          <img id="artwork-img" class="artwork-img hidden" alt="Album Artwork" />
-        </div>
-
-        <div class="metadata-wrapper">
-          <div class="source-info">
-            <span class="source-label">Active Provider:</span>
-            <span id="provider-name" class="source-value">Spotube</span>
-            <span id="bundle-id" class="source-bundle">(org.spotube.spotube)</span>
-          </div>
-
-          <h1 id="song-title" class="song-title">No Track Playing</h1>
-          <h2 id="song-artist" class="song-artist">-</h2>
-          <div class="song-album-row">
-            <span class="album-label">Album:</span>
-            <span id="song-album" class="song-album">None (Not provided by Spotube)</span>
-          </div>
-
-          <div class="progress-section">
-            <div class="progress-bar-container" id="progress-bar-container">
-              <div class="progress-bar-fill" id="progress-bar-fill"></div>
+          <!-- Touch Bar Integration -->
+          <div class="setting-item">
+            <div class="setting-text">
+              <span class="setting-title">macOS Touch Bar</span>
+              <span class="setting-desc">Display live lyrics on physical Touch Bar</span>
             </div>
-            <div class="time-display">
-              <span id="current-time">0:00</span>
-              <span id="total-time">0:00</span>
+            <label class="switch">
+              <input type="checkbox" id="setting-touchbar" checked />
+              <span class="slider"></span>
+            </label>
+          </div>
+
+          <div class="setting-sub-row">
+            <button id="btn-present-tb" class="sub-action-btn">Present Globally</button>
+            <button id="btn-dismiss-tb" class="sub-action-btn">Dismiss</button>
+            <span id="tb-badge" class="tb-badge">Active</span>
+          </div>
+
+          <!-- Lyrics Font Size -->
+          <div class="setting-item">
+            <div class="setting-text">
+              <label for="setting-font-size" class="setting-title">Lyrics Font Size</label>
+              <span class="setting-desc">Current line size</span>
+            </div>
+            <div class="slider-control-wrap">
+              <input type="range" id="setting-font-size" min="16" max="36" value="24" step="1" />
+              <span id="font-size-val" class="control-value">24px</span>
             </div>
           </div>
 
-          <div class="controls-row">
-            <button id="btn-prev" class="control-btn" title="Previous Track">
-              <svg viewBox="0 0 24 24" fill="currentColor">
-                <path d="M6 6h2v12H6zm3.5 6l8.5 6V6z"/>
-              </svg>
-            </button>
-            <button id="btn-play-pause" class="control-btn control-btn-primary" title="Play/Pause">
-              <svg id="icon-play" class="hidden" viewBox="0 0 24 24" fill="currentColor">
-                <path d="M8 5v14l11-7z"/>
-              </svg>
-              <svg id="icon-pause" viewBox="0 0 24 24" fill="currentColor">
-                <path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/>
-              </svg>
-            </button>
-            <button id="btn-next" class="control-btn" title="Next Track">
-              <svg viewBox="0 0 24 24" fill="currentColor">
-                <path d="M6 18l8.5-6L6 6v12zM16 6v12h2V6h-2z"/>
-              </svg>
-            </button>
+          <!-- Lyrics Offset Adjustment -->
+          <div class="setting-item">
+            <div class="setting-text">
+              <label for="setting-offset" class="setting-title">Timing Offset</label>
+              <span class="setting-desc">Shift sync forward / back</span>
+            </div>
+            <div class="offset-controls">
+              <button id="btn-offset-minus" class="mini-btn">-50ms</button>
+              <span id="offset-val" class="offset-display">0 ms</span>
+              <button id="btn-offset-plus" class="mini-btn">+50ms</button>
+              <button id="btn-offset-reset" class="mini-btn mini-btn-secondary">Reset</button>
+            </div>
           </div>
-        </div>
-      </main>
 
-      <!-- Phase 4: Touch Bar Live Mirror & Status -->
-      <section class="touchbar-card">
-        <div class="touchbar-header">
-          <div class="touchbar-title-wrap">
-            <h3 class="touchbar-title">macOS Touch Bar Status</h3>
-            <span id="touchbar-badge" class="touchbar-badge">Global Active</span>
+          <!-- Launch at Login -->
+          <div class="setting-item">
+            <div class="setting-text">
+              <span class="setting-title">Launch at Login</span>
+              <span class="setting-desc">Start TLyrics when macOS boots</span>
+            </div>
+            <label class="switch">
+              <input type="checkbox" id="setting-autostart" />
+              <span class="slider"></span>
+            </label>
           </div>
-          <div class="touchbar-actions">
-            <button id="btn-present-tb" class="btn-tb-action" title="Force Present Touch Bar Globally Across Apps">Present Globally</button>
-            <button id="btn-dismiss-tb" class="btn-tb-action" title="Dismiss Global Touch Bar">Dismiss</button>
-          </div>
-        </div>
 
-        <!-- Visual representation of the physical Touch Bar -->
-        <div class="touchbar-strip">
-          <div class="touchbar-controls">
-            <div class="tb-btn" id="tb-btn-prev">⏮</div>
-            <div class="tb-btn" id="tb-btn-play">⏯</div>
-            <div class="tb-btn" id="tb-btn-next">⏭</div>
+          <!-- Background Mode -->
+          <div class="setting-item">
+            <div class="setting-text">
+              <span class="setting-title">Background Operation</span>
+              <span class="setting-desc">Keep monitoring when window closes</span>
+            </div>
+            <label class="switch">
+              <input type="checkbox" id="setting-bg-mode" checked />
+              <span class="slider"></span>
+            </label>
           </div>
-          <div class="touchbar-lyrics-area">
-            <span id="tb-curr-lyric" class="tb-curr-text">♪ TLyrics</span>
-            <span id="tb-next-lyric" class="tb-next-text"></span>
-          </div>
-        </div>
 
-        <div class="touchbar-bg-info">
-          <div class="bg-info-header">
-            <strong>Background Touch Bar Integration (BetterTouchTool / MTMR / Pock):</strong>
+          <!-- Cache Management -->
+          <div class="setting-item setting-action-item">
+            <div class="setting-text">
+              <span class="setting-title">Lyrics Cache</span>
+              <span id="cache-desc" class="setting-desc">Stored in ~/.cache/tlyrics/lyrics</span>
+            </div>
+            <button id="btn-clear-cache" class="action-btn-danger">Clear Cache</button>
           </div>
-          <p class="bg-info-desc">
-            macOS restricts background apps from claiming the Touch Bar when unfocused. TLyrics automatically streams real-time lyrics to local IPC files for background utilities:
-          </p>
-          <div class="ipc-path-row">
-            <code>~/.cache/tlyrics/current_lyric.txt</code>
-            <button class="btn-copy" id="btn-copy-btt" title="Copy BTT Script">Copy BTT Script</button>
-            <button class="btn-copy" id="btn-copy-mtmr" title="Copy MTMR JSON">Copy MTMR JSON</button>
-          </div>
-        </div>
-      </section>
 
-      <!-- Phase 3: Synchronized Lyrics Display -->
-      <section class="lyrics-card">
-        <div class="lyrics-header">
-          <div class="lyrics-title-wrap">
-            <h3 class="lyrics-title">Synchronized Lyrics</h3>
-            <span id="lyrics-badge" class="lyrics-badge badge-searching">Initializing...</span>
-          </div>
-          <div class="lyrics-preview-wrap">
-            <span class="preview-label">Next Line:</span>
-            <span id="lyrics-next-line" class="lyrics-next-text">-</span>
+          <!-- IPC Quick Actions for BTT / MTMR -->
+          <div class="setting-item setting-column">
+            <span class="setting-title">Third-Party Touch Bar Tools</span>
+            <span class="setting-desc">Background IPC stream active at ~/.cache/tlyrics/current_lyric.txt</span>
+            <div class="ipc-btn-row">
+              <button id="btn-copy-btt" class="sub-action-btn">Copy BTT Script</button>
+              <button id="btn-copy-mtmr" class="sub-action-btn">Copy MTMR JSON</button>
+            </div>
           </div>
         </div>
-        <div class="lyrics-scroll-container" id="lyrics-scroll-container">
-          <div id="lyrics-list" class="lyrics-list">
-            <div class="lyrics-empty">Waiting for active track playback...</div>
-          </div>
-        </div>
-      </section>
-
-      <!-- Diagnostics Panel -->
-      <section class="diagnostic-card">
-        <div class="diagnostic-header">
-          <h3>Phase 4 System Diagnostics</h3>
-          <div class="header-actions">
-            <button id="btn-refresh" class="btn-refresh">Refresh State</button>
-          </div>
-        </div>
-        <table class="verification-table">
-          <thead>
-            <tr>
-              <th>Field / Component</th>
-              <th>Status</th>
-              <th>Resolved Value</th>
-            </tr>
-          </thead>
-          <tbody id="verification-body">
-            <!-- Populated dynamically -->
-          </tbody>
-        </table>
-      </section>
+      </aside>
     </div>
   </body>
 </html>

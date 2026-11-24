@@ -66,6 +66,19 @@ impl LyricsCache {
             }
         }
     }
+
+    /// Clears both memory and disk cache
+    pub fn clear(&self) {
+        if let Ok(mut mem) = self.memory_cache.write() {
+            mem.clear();
+        }
+        if let Some(ref dir) = self.cache_dir {
+            if dir.exists() {
+                let _ = fs::remove_dir_all(dir);
+                let _ = fs::create_dir_all(dir);
+            }
+        }
+    }
 }
 
 impl Default for LyricsCache {

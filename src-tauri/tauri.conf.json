@@ -10,9 +10,12 @@
     "withGlobalTauri": true,
     "windows": [
       {
-        "title": "tlyrics",
-        "width": 800,
-        "height": 600
+        "title": "TLyrics",
+        "width": 420,
+        "height": 560,
+        "minWidth": 340,
+        "minHeight": 440,
+        "resizable": true
       }
     ],
     "security": {

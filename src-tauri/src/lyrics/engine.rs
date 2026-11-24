@@ -11,6 +11,7 @@ pub struct LyricsEngine {
     current_fingerprint: RwLock<Option<String>>,
     current_lyrics: RwLock<Option<LyricsData>>,
     is_fetching: RwLock<bool>,
+    offset_ms: RwLock<i64>,
 }
 
 impl LyricsEngine {
@@ -21,7 +22,28 @@ impl LyricsEngine {
             current_fingerprint: RwLock::new(None),
             current_lyrics: RwLock::new(None),
             is_fetching: RwLock::new(false),
+            offset_ms: RwLock::new(0),
         }
+    }
+
+    /// Sets the lyrics timing offset in milliseconds
+    pub fn set_offset_ms(&self, ms: i64) {
+        let mut lock = self.offset_ms.write().unwrap();
+        *lock = ms;
+    }
+
+    /// Returns the lyrics timing offset in milliseconds
+    pub fn get_offset_ms(&self) -> i64 {
+        *self.offset_ms.read().unwrap()
+    }
+
+    /// Clears cached lyrics from memory and disk and resets state
+    pub fn clear_cache(&self) {
+        self.cache.clear();
+        let mut lyr = self.current_lyrics.write().unwrap();
+        *lyr = None;
+        let mut fp = self.current_fingerprint.write().unwrap();
+        *fp = None;
     }
 
     /// Explicitly fetch or retrieve cached lyrics for given track metadata
@@ -119,8 +141,10 @@ impl LyricsEngine {
             }
         }
 
-        // Compute current synchronized position
-        self.compute_synced_state(playback_state.position_secs, &fingerprint)
+        // Compute current synchronized position with user offset
+        let offset_secs = (*self.offset_ms.read().unwrap() as f64) / 1000.0;
+        let adjusted_pos = (playback_state.position_secs + offset_secs).max(0.0);
+        self.compute_synced_state(adjusted_pos, &fingerprint)
     }
 
     /// Computes the synchronized state based on active position in seconds
