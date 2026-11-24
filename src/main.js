@@ -470,7 +470,61 @@ window.addEventListener("DOMContentLoaded", async () => {
       await invoke("dismiss_global_touchbar").catch(console.error);
       if (tbBadge) tbBadge.textContent = "Disabled";
     }
+    syncAppSettings();
   });
+
+  // App Settings Synchronization
+  let currentAppSettings = {
+    launchAtLogin: false,
+    startHidden: false,
+    backgroundMode: true,
+    touchbarEnabled: true,
+    lastWindowVisible: true,
+  };
+
+  async function loadAppSettings() {
+    try {
+      const res = await invoke("get_app_settings");
+      if (res) {
+        currentAppSettings = res;
+        const autostartEl = document.getElementById("setting-autostart");
+        const startHiddenEl = document.getElementById("setting-start-hidden");
+        const bgModeEl = document.getElementById("setting-bg-mode");
+        const touchbarEl = document.getElementById("setting-touchbar");
+
+        if (autostartEl) autostartEl.checked = !!res.launchAtLogin;
+        if (startHiddenEl) startHiddenEl.checked = !!res.startHidden;
+        if (bgModeEl) bgModeEl.checked = !!res.backgroundMode;
+        if (touchbarEl) touchbarEl.checked = !!res.touchbarEnabled;
+      }
+    } catch (e) {
+      console.warn("Failed to load app settings:", e);
+    }
+  }
+
+  async function syncAppSettings() {
+    try {
+      const autostartEl = document.getElementById("setting-autostart");
+      const startHiddenEl = document.getElementById("setting-start-hidden");
+      const bgModeEl = document.getElementById("setting-bg-mode");
+      const touchbarEl = document.getElementById("setting-touchbar");
+
+      currentAppSettings.launchAtLogin = autostartEl ? autostartEl.checked : false;
+      currentAppSettings.startHidden = startHiddenEl ? startHiddenEl.checked : false;
+      currentAppSettings.backgroundMode = bgModeEl ? bgModeEl.checked : true;
+      currentAppSettings.touchbarEnabled = touchbarEl ? touchbarEl.checked : true;
+
+      await invoke("save_app_settings", { newSettings: currentAppSettings });
+    } catch (e) {
+      console.warn("Failed to save app settings:", e);
+    }
+  }
+
+  document.getElementById("setting-autostart")?.addEventListener("change", syncAppSettings);
+  document.getElementById("setting-start-hidden")?.addEventListener("change", syncAppSettings);
+  document.getElementById("setting-bg-mode")?.addEventListener("change", syncAppSettings);
+
+  await loadAppSettings();
 
   // Fetch Touch Bar background snippets
   try {
@@ -515,6 +569,9 @@ window.addEventListener("DOMContentLoaded", async () => {
       });
       await eventModule.listen("lyrics-state", (event) => {
         renderLyrics(event.payload);
+      });
+      await eventModule.listen("open-settings", () => {
+        settingsPanel?.classList.remove("hidden");
       });
     } catch (e) {
       console.warn("Event listen not available:", e);
