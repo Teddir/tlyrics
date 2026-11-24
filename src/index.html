@@ -4,7 +4,7 @@
     <meta charset="UTF-8" />
     <link rel="stylesheet" href="styles.css" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>TLyrics - Spotube Player</title>
+    <title>TLyrics - Universal Music Companion</title>
     <script type="module" src="/main.js" defer></script>
   </head>
 
@@ -13,11 +13,20 @@
       <header class="app-header">
         <div class="brand">
           <span class="brand-title">TLyrics</span>
-          <span class="brand-tag">Spotube Provider</span>
+          <span class="brand-tag">Phase 2 Universal</span>
         </div>
-        <div id="status-badge" class="status-badge status-inactive">
-          <span class="status-dot"></span>
-          <span id="status-text">Connecting...</span>
+        <div class="header-right">
+          <div class="provider-selector-wrap">
+            <select id="provider-select" class="provider-select" title="Active Playback Provider">
+              <option value="auto">Auto (Spotube-First)</option>
+              <option value="spotube">Spotube (Dedicated)</option>
+              <option value="macos_now_playing">macOS System Media</option>
+            </select>
+          </div>
+          <div id="status-badge" class="status-badge status-inactive">
+            <span class="status-dot"></span>
+            <span id="status-text">Connecting...</span>
+          </div>
         </div>
       </header>
 
@@ -33,8 +42,8 @@
 
         <div class="metadata-wrapper">
           <div class="source-info">
-            <span class="source-label">Source:</span>
-            <span id="app-name" class="source-value">Spotube</span>
+            <span class="source-label">Active Provider:</span>
+            <span id="provider-name" class="source-value">Spotube</span>
             <span id="bundle-id" class="source-bundle">(org.spotube.spotube)</span>
           </div>
 
@@ -80,19 +89,21 @@
 
       <section class="diagnostic-card">
         <div class="diagnostic-header">
-          <h3>Phase 1 Detection Verification</h3>
-          <button id="btn-refresh" class="btn-refresh">Manual Query</button>
+          <h3>Universal Architecture Diagnostics</h3>
+          <div class="header-actions">
+            <button id="btn-refresh" class="btn-refresh">Refresh State</button>
+          </div>
         </div>
         <table class="verification-table">
           <thead>
             <tr>
-              <th>Field</th>
+              <th>Field / Architecture Point</th>
               <th>Status</th>
-              <th>Actual Value</th>
+              <th>Resolved Value</th>
             </tr>
           </thead>
           <tbody id="verification-body">
-            <!-- Populated by JavaScript -->
+            <!-- Populated dynamically -->
           </tbody>
         </table>
       </section>

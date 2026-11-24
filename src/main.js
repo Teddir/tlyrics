@@ -3,7 +3,6 @@ const eventModule = window.__TAURI__.event;
 
 let lastState = null;
 let smoothPosition = 0;
-let positionTimer = null;
 
 function formatTime(seconds) {
   if (isNaN(seconds) || seconds < 0) return "0:00";
@@ -21,28 +20,40 @@ function updateVerificationTable(state) {
 
   const fields = [
     {
-      name: "Application Name",
-      status: isDetected ? "Verified" : "Waiting",
+      name: "Resolved Provider ID",
+      status: "Active",
+      statusClass: "badge-verified",
+      value: `${state.providerId} (${state.providerName})`,
+    },
+    {
+      name: "Source Application",
+      status: isDetected ? "Connected" : "Idle",
       statusClass: isDetected ? "badge-verified" : "badge-empty",
-      value: `${state.appName || "-"} (${state.bundleId || "-"})`,
+      value: `${state.appName || "-"} [${state.bundleId || "-"}]`,
     },
     {
       name: "Song Title",
-      status: track?.title ? "Verified" : "Waiting",
+      status: track?.title ? "Resolved" : "None",
       statusClass: track?.title ? "badge-verified" : "badge-empty",
       value: track?.title || "No track title detected",
     },
     {
       name: "Artist",
-      status: track?.artist ? "Verified" : "Waiting",
+      status: track?.artist ? "Resolved" : "None",
       statusClass: track?.artist ? "badge-verified" : "badge-empty",
       value: track?.artist || "No artist detected",
     },
     {
       name: "Album",
-      status: track?.album ? "Verified" : "Verified (Empty)",
+      status: track?.album ? "Resolved" : "Verified Empty",
       statusClass: track?.album ? "badge-verified" : "badge-empty",
       value: track?.album ? track.album : "None (Spotube omitted album metadata - not fabricated)",
+    },
+    {
+      name: "Track Fingerprint",
+      status: track ? "Computed" : "None",
+      statusClass: track ? "badge-verified" : "badge-empty",
+      value: track ? `${track.title.trim().toLowerCase()}::${track.artist.trim().toLowerCase()}::${track.durationSecs.toFixed(1)}` : "None",
     },
     {
       name: "Artwork",
@@ -58,14 +69,14 @@ function updateVerificationTable(state) {
     },
     {
       name: "Playback Position",
-      status: isDetected ? "Verified" : "Waiting",
+      status: isDetected ? "Live" : "Idle",
       statusClass: isDetected ? "badge-verified" : "badge-empty",
       value: `${state.positionSecs.toFixed(2)}s (${formatTime(state.positionSecs)})`,
     },
     {
       name: "Playback Status",
-      status: isDetected ? "Verified" : "Waiting",
-      statusClass: isDetected ? "badge-verified" : "badge-empty",
+      status: state.status.toUpperCase(),
+      statusClass: state.status === "playing" ? "badge-verified" : "badge-empty",
       value: state.status.toUpperCase(),
     },
   ];
@@ -93,17 +104,17 @@ function renderPlaybackState(state) {
   const statusText = document.getElementById("status-text");
   statusBadge.className = `status-badge status-${state.status}`;
   if (state.status === "playing") {
-    statusText.textContent = "Playing in Spotube";
+    statusText.textContent = `Playing (${state.providerName})`;
   } else if (state.status === "paused") {
     statusText.textContent = "Paused";
   } else if (state.status === "stopped") {
-    statusText.textContent = "Spotube Idle";
+    statusText.textContent = "Idle";
   } else {
-    statusText.textContent = "Spotube Inactive";
+    statusText.textContent = "Inactive";
   }
 
   // App & Source
-  document.getElementById("app-name").textContent = state.appName || "Spotube";
+  document.getElementById("provider-name").textContent = state.providerName || "Spotube";
   document.getElementById("bundle-id").textContent = state.bundleId ? `(${state.bundleId})` : "";
 
   // Track Info
@@ -135,7 +146,7 @@ function renderPlaybackState(state) {
 
     document.getElementById("total-time").textContent = formatTime(state.track.durationSecs);
   } else {
-    songTitleEl.textContent = state.is_detected ? "Spotube connected (Idle)" : "Waiting for Spotube...";
+    songTitleEl.textContent = state.is_detected ? `${state.providerName} connected (Idle)` : "Waiting for playback...";
     songArtistEl.textContent = "-";
     songAlbumEl.textContent = "None";
     artworkImg.classList.add("hidden");
@@ -171,19 +182,30 @@ function updateProgress() {
 
 async function fetchState() {
   try {
-    const state = await invoke("get_spotube_playback_state");
+    const state = await invoke("get_playback_state");
     renderPlaybackState(state);
   } catch (err) {
-    console.error("Failed to query Spotube state:", err);
+    console.error("Failed to query playback state:", err);
   }
 }
 
 async function sendCommand(cmd) {
   try {
-    await invoke("send_media_control", { command: cmd });
+    await invoke("send_playback_command", { command: cmd });
     setTimeout(fetchState, 150);
   } catch (err) {
     console.error(`Failed to send command ${cmd}:`, err);
+  }
+}
+
+async function handleProviderChange(event) {
+  const value = event.target.value;
+  const providerId = value === "auto" ? null : value;
+  try {
+    await invoke("set_active_provider", { providerId });
+    await fetchState();
+  } catch (err) {
+    console.error("Failed to switch provider:", err);
   }
 }
 
@@ -192,6 +214,7 @@ window.addEventListener("DOMContentLoaded", async () => {
   document.getElementById("btn-play-pause")?.addEventListener("click", () => sendCommand("toggle"));
   document.getElementById("btn-next")?.addEventListener("click", () => sendCommand("next"));
   document.getElementById("btn-refresh")?.addEventListener("click", fetchState);
+  document.getElementById("provider-select")?.addEventListener("change", handleProviderChange);
 
   // Subscribe to background push events if available
   if (eventModule && eventModule.listen) {
@@ -207,7 +230,7 @@ window.addEventListener("DOMContentLoaded", async () => {
   // Immediate query
   await fetchState();
 
-  // Polling fallback + smooth progress interpolation
+  // Smooth progress interpolation
   setInterval(() => {
     if (lastState && lastState.status === "playing" && lastState.track) {
       smoothPosition = Math.min(lastState.track.durationSecs, smoothPosition + 0.25);
@@ -215,6 +238,6 @@ window.addEventListener("DOMContentLoaded", async () => {
     }
   }, 250);
 
-  // Periodic poll
+  // Periodic fallback poll
   setInterval(fetchState, 1000);
 });

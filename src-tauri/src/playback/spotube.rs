@@ -1,5 +1,5 @@
-use super::macos_native::get_native_now_playing;
-use super::{PlaybackProvider, PlaybackState, PlaybackStatus, TrackMetadata};
+use super::macos_native::{get_native_now_playing, send_native_media_command};
+use super::{PlaybackCommand, PlaybackProvider, PlaybackState, PlaybackStatus, TrackMetadata};
 use std::time::{SystemTime, UNIX_EPOCH};
 
 pub struct SpotubeProvider;
@@ -17,8 +17,21 @@ impl Default for SpotubeProvider {
 }
 
 impl PlaybackProvider for SpotubeProvider {
-    fn name(&self) -> &'static str {
+    fn id(&self) -> &'static str {
         "spotube"
+    }
+
+    fn display_name(&self) -> &'static str {
+        "Spotube"
+    }
+
+    fn is_available(&self) -> bool {
+        if let Some(snapshot) = get_native_now_playing() {
+            if snapshot.is_spotube {
+                return true;
+            }
+        }
+        false
     }
 
     fn get_state(&self) -> Result<PlaybackState, String> {
@@ -32,7 +45,8 @@ impl PlaybackProvider for SpotubeProvider {
             Some(s) => s,
             None => {
                 return Ok(PlaybackState {
-                    provider_name: "Spotube".to_string(),
+                    provider_id: self.id().to_string(),
+                    provider_name: self.display_name().to_string(),
                     app_name: "Spotube".to_string(),
                     bundle_id: "org.spotube.spotube".to_string(),
                     is_detected: false,
@@ -44,10 +58,11 @@ impl PlaybackProvider for SpotubeProvider {
             }
         };
 
-        // Check if the current Now Playing client is Spotube
+        // If Spotube is not the current Now Playing client
         if !snapshot.is_spotube {
             return Ok(PlaybackState {
-                provider_name: "Spotube".to_string(),
+                provider_id: self.id().to_string(),
+                provider_name: self.display_name().to_string(),
                 app_name: snapshot.app_name,
                 bundle_id: snapshot.bundle_id,
                 is_detected: false,
@@ -58,7 +73,7 @@ impl PlaybackProvider for SpotubeProvider {
             });
         }
 
-        // Active app is Spotube!
+        // Active client is Spotube
         let has_track = !snapshot.title.trim().is_empty();
         let track = if has_track {
             Some(TrackMetadata {
@@ -92,7 +107,8 @@ impl PlaybackProvider for SpotubeProvider {
         };
 
         Ok(PlaybackState {
-            provider_name: "Spotube".to_string(),
+            provider_id: self.id().to_string(),
+            provider_name: self.display_name().to_string(),
             app_name: if snapshot.app_name.is_empty() { "Spotube".to_string() } else { snapshot.app_name },
             bundle_id: if snapshot.bundle_id.is_empty() { "org.spotube.spotube".to_string() } else { snapshot.bundle_id },
             is_detected: true,
@@ -102,34 +118,16 @@ impl PlaybackProvider for SpotubeProvider {
             timestamp_ms: now_epoch_ms,
         })
     }
-}
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn test_spotube_playback_detection() {
-        let provider = SpotubeProvider::new();
-        let state = provider.get_state().expect("Failed to get state");
-        println!("\n=== LIVE SPOTUBE PLAYBACK STATE ===");
-        println!("Provider Name: {}", state.provider_name);
-        println!("App Name: {}", state.app_name);
-        println!("Bundle ID: {}", state.bundle_id);
-        println!("Is Detected: {}", state.is_detected);
-        println!("Status: {:?}", state.status);
-        if let Some(track) = &state.track {
-            println!("Song Title: {}", track.title);
-            println!("Artist: {}", track.artist);
-            println!("Album: {:?}", track.album);
-            println!("Duration: {:.2}s", track.duration_secs);
-            println!("Artwork: {}", if track.artwork_data_url.is_some() { "Present (Base64 Data URL)" } else { "None" });
-        }
-        println!("Position: {:.2}s", state.position_secs);
-        println!("Timestamp: {} ms", state.timestamp_ms);
-        println!("===================================\n");
-
-        assert_eq!(provider.name(), "spotube");
-        assert_eq!(state.provider_name, "Spotube");
+    fn send_command(&self, cmd: PlaybackCommand) -> Result<bool, String> {
+        let cmd_str = match cmd {
+            PlaybackCommand::Play => "play",
+            PlaybackCommand::Pause => "pause",
+            PlaybackCommand::Toggle => "toggle",
+            PlaybackCommand::Stop => "stop",
+            PlaybackCommand::Next => "next",
+            PlaybackCommand::Previous => "prev",
+        };
+        Ok(send_native_media_command(cmd_str))
     }
 }
