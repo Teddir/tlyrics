@@ -1,0 +1,101 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="stylesheet" href="styles.css" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>TLyrics - Spotube Player</title>
+    <script type="module" src="/main.js" defer></script>
+  </head>
+
+  <body>
+    <div class="app-container">
+      <header class="app-header">
+        <div class="brand">
+          <span class="brand-title">TLyrics</span>
+          <span class="brand-tag">Spotube Provider</span>
+        </div>
+        <div id="status-badge" class="status-badge status-inactive">
+          <span class="status-dot"></span>
+          <span id="status-text">Connecting...</span>
+        </div>
+      </header>
+
+      <main class="player-card">
+        <div class="artwork-wrapper">
+          <div id="artwork-placeholder" class="artwork-placeholder">
+            <svg viewBox="0 0 24 24" class="music-icon" fill="none" stroke="currentColor" stroke-width="1.5">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M9 19V6l12-3v13M9 19c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zm12-3c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zM9 10l12-3" />
+            </svg>
+          </div>
+          <img id="artwork-img" class="artwork-img hidden" alt="Album Artwork" />
+        </div>
+
+        <div class="metadata-wrapper">
+          <div class="source-info">
+            <span class="source-label">Source:</span>
+            <span id="app-name" class="source-value">Spotube</span>
+            <span id="bundle-id" class="source-bundle">(org.spotube.spotube)</span>
+          </div>
+
+          <h1 id="song-title" class="song-title">No Track Playing</h1>
+          <h2 id="song-artist" class="song-artist">-</h2>
+          <div class="song-album-row">
+            <span class="album-label">Album:</span>
+            <span id="song-album" class="song-album">None (Not provided by Spotube)</span>
+          </div>
+
+          <div class="progress-section">
+            <div class="progress-bar-container" id="progress-bar-container">
+              <div class="progress-bar-fill" id="progress-bar-fill"></div>
+            </div>
+            <div class="time-display">
+              <span id="current-time">0:00</span>
+              <span id="total-time">0:00</span>
+            </div>
+          </div>
+
+          <div class="controls-row">
+            <button id="btn-prev" class="control-btn" title="Previous Track">
+              <svg viewBox="0 0 24 24" fill="currentColor">
+                <path d="M6 6h2v12H6zm3.5 6l8.5 6V6z"/>
+              </svg>
+            </button>
+            <button id="btn-play-pause" class="control-btn control-btn-primary" title="Play/Pause">
+              <svg id="icon-play" class="hidden" viewBox="0 0 24 24" fill="currentColor">
+                <path d="M8 5v14l11-7z"/>
+              </svg>
+              <svg id="icon-pause" viewBox="0 0 24 24" fill="currentColor">
+                <path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/>
+              </svg>
+            </button>
+            <button id="btn-next" class="control-btn" title="Next Track">
+              <svg viewBox="0 0 24 24" fill="currentColor">
+                <path d="M6 18l8.5-6L6 6v12zM16 6v12h2V6h-2z"/>
+              </svg>
+            </button>
+          </div>
+        </div>
+      </main>
+
+      <section class="diagnostic-card">
+        <div class="diagnostic-header">
+          <h3>Phase 1 Detection Verification</h3>
+          <button id="btn-refresh" class="btn-refresh">Manual Query</button>
+        </div>
+        <table class="verification-table">
+          <thead>
+            <tr>
+              <th>Field</th>
+              <th>Status</th>
+              <th>Actual Value</th>
+            </tr>
+          </thead>
+          <tbody id="verification-body">
+            <!-- Populated by JavaScript -->
+          </tbody>
+        </table>
+      </section>
+    </div>
+  </body>
+</html>
