@@ -92,9 +92,12 @@
         <div class="touchbar-header">
           <div class="touchbar-title-wrap">
             <h3 class="touchbar-title">macOS Touch Bar Status</h3>
-            <span id="touchbar-badge" class="touchbar-badge">Native AppKit Active</span>
+            <span id="touchbar-badge" class="touchbar-badge">Global Active</span>
           </div>
-          <span class="touchbar-subtext">Physical Touch Bar Mirror</span>
+          <div class="touchbar-actions">
+            <button id="btn-present-tb" class="btn-tb-action" title="Force Present Touch Bar Globally Across Apps">Present Globally</button>
+            <button id="btn-dismiss-tb" class="btn-tb-action" title="Dismiss Global Touch Bar">Dismiss</button>
+          </div>
         </div>
 
         <!-- Visual representation of the physical Touch Bar -->

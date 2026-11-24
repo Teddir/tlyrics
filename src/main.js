@@ -329,6 +329,22 @@ window.addEventListener("DOMContentLoaded", async () => {
   document.getElementById("tb-btn-play")?.addEventListener("click", () => sendCommand("toggle"));
   document.getElementById("tb-btn-next")?.addEventListener("click", () => sendCommand("next"));
 
+  // Global Touch Bar present/dismiss buttons
+  document.getElementById("btn-present-tb")?.addEventListener("click", async () => {
+    try {
+      await invoke("present_global_touchbar");
+    } catch (e) {
+      console.error(e);
+    }
+  });
+  document.getElementById("btn-dismiss-tb")?.addEventListener("click", async () => {
+    try {
+      await invoke("dismiss_global_touchbar");
+    } catch (e) {
+      console.error(e);
+    }
+  });
+
   // Fetch Touch Bar background snippets
   try {
     touchBarInfo = await invoke("get_touchbar_integration_info");

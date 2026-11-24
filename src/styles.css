@@ -339,6 +339,30 @@ body {
   align-items: center;
 }
 
+.touchbar-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.btn-tb-action {
+  background-color: #212631;
+  color: var(--text-main);
+  border: 1px solid var(--card-border);
+  padding: 4px 10px;
+  border-radius: 6px;
+  font-size: 0.72rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.btn-tb-action:hover {
+  background-color: var(--accent-color);
+  color: var(--bg-color);
+  border-color: var(--accent-color);
+}
+
 .touchbar-title-wrap {
   display: flex;
   align-items: center;

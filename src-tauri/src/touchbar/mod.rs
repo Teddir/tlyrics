@@ -4,6 +4,8 @@ use std::path::PathBuf;
 
 unsafe extern "C" {
     fn tlyrics_touchbar_init();
+    fn tlyrics_touchbar_present_global();
+    fn tlyrics_touchbar_dismiss_global();
     fn tlyrics_touchbar_update(
         current: *const std::os::raw::c_char,
         next: *const std::os::raw::c_char,
@@ -20,7 +22,6 @@ impl TouchBarManager {
         let cache_dir = dirs_touchbar_cache();
         if let Some(ref dir) = cache_dir {
             let _ = fs::create_dir_all(dir);
-            // Write sample BTT & MTMR integration presets on initialization
             let _ = fs::write(dir.join("btt_widget_script.sh"), generate_btt_script());
             let _ = fs::write(dir.join("mtmr_item.json"), generate_mtmr_preset());
         }
@@ -28,11 +29,27 @@ impl TouchBarManager {
         Self { cache_dir }
     }
 
-    /// Initializes native AppKit Touch Bar attached to application and windows
+    /// Initializes native AppKit Touch Bar and registers global Control Strip item
     pub fn init_native(&self) {
         #[cfg(target_os = "macos")]
         unsafe {
             tlyrics_touchbar_init();
+        }
+    }
+
+    /// Forces global system modal presentation across all apps
+    pub fn present_global(&self) {
+        #[cfg(target_os = "macos")]
+        unsafe {
+            tlyrics_touchbar_present_global();
+        }
+    }
+
+    /// Dismisses global system modal Touch Bar
+    pub fn dismiss_global(&self) {
+        #[cfg(target_os = "macos")]
+        unsafe {
+            tlyrics_touchbar_dismiss_global();
         }
     }
 
@@ -60,7 +77,6 @@ impl TouchBarManager {
 
         // 2. Update background integrations (BetterTouchTool, MTMR, Pock) via IPC files
         if let Some(ref dir) = self.cache_dir {
-            // Write single-line text for simple shell widgets:
             let display_text = if !next.is_empty() {
                 format!("{} ‣ {}", curr, next)
             } else {
@@ -68,7 +84,6 @@ impl TouchBarManager {
             };
             let _ = fs::write(dir.join("current_lyric.txt"), &display_text);
 
-            // Write full JSON for rich BTT / MTMR script widgets:
             let json_payload = serde_json::json!({
                 "currentLine": curr,
                 "nextLine": next,

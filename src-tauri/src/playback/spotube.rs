@@ -1,12 +1,21 @@
 use super::macos_native::{get_native_now_playing, send_native_media_command};
 use super::{PlaybackCommand, PlaybackProvider, PlaybackState, PlaybackStatus, TrackMetadata};
+use std::sync::RwLock;
 use std::time::{SystemTime, UNIX_EPOCH};
 
-pub struct SpotubeProvider;
+pub struct SpotubeProvider {
+    last_known_position: RwLock<f64>,
+    last_timestamp_epoch: RwLock<f64>,
+    last_track_title: RwLock<String>,
+}
 
 impl SpotubeProvider {
     pub fn new() -> Self {
-        Self
+        Self {
+            last_known_position: RwLock::new(0.0),
+            last_timestamp_epoch: RwLock::new(0.0),
+            last_track_title: RwLock::new(String::new()),
+        }
     }
 }
 
@@ -77,10 +86,10 @@ impl PlaybackProvider for SpotubeProvider {
         let has_track = !snapshot.title.trim().is_empty();
         let track = if has_track {
             Some(TrackMetadata {
-                title: snapshot.title,
-                artist: snapshot.artist,
-                album: snapshot.album,
-                artwork_data_url: snapshot.artwork_data_url,
+                title: snapshot.title.clone(),
+                artist: snapshot.artist.clone(),
+                album: snapshot.album.clone(),
+                artwork_data_url: snapshot.artwork_data_url.clone(),
                 duration_secs: snapshot.duration_secs,
             })
         } else {
@@ -95,12 +104,34 @@ impl PlaybackProvider for SpotubeProvider {
             PlaybackStatus::Paused
         };
 
+        // Robust position calculation handling seeking and pause/resume
         let position_secs = if has_track {
+            let mut last_pos = self.last_known_position.write().unwrap();
+            let mut last_ts = self.last_timestamp_epoch.write().unwrap();
+            let mut last_title = self.last_track_title.write().unwrap();
+
+            // Track change detected
+            if *last_title != snapshot.title {
+                *last_title = snapshot.title.clone();
+                *last_pos = 0.0;
+                *last_ts = snapshot.timestamp_epoch;
+            }
+
             if snapshot.is_playing && snapshot.playback_rate > 0.0 {
                 let diff = (now_epoch_secs - snapshot.timestamp_epoch).max(0.0);
-                (snapshot.elapsed_secs + diff * snapshot.playback_rate).clamp(0.0, snapshot.duration_secs)
+                let computed = (snapshot.elapsed_secs + diff * snapshot.playback_rate).clamp(0.0, snapshot.duration_secs);
+                *last_pos = computed;
+                *last_ts = snapshot.timestamp_epoch;
+                computed
             } else {
-                snapshot.elapsed_secs.clamp(0.0, snapshot.duration_secs)
+                // Paused: if timestamp changed significantly or elapsed_secs is explicitly set, use elapsed_secs
+                if snapshot.elapsed_secs > 0.0 {
+                    *last_pos = snapshot.elapsed_secs;
+                    snapshot.elapsed_secs.clamp(0.0, snapshot.duration_secs)
+                } else {
+                    // Frozen position at pause
+                    (*last_pos).clamp(0.0, snapshot.duration_secs)
+                }
             }
         } else {
             0.0

@@ -3,14 +3,41 @@ import AppKit
 @_silgen_name("mac_now_playing_send_command")
 func mac_now_playing_send_command(_ cmd: Int32) -> Bool
 
+// DFRFoundation private functions
+typealias DFRElementSetControlStripPresenceFunction = @convention(c) (NSTouchBarItem.Identifier, Bool) -> Void
+typealias DFRSystemModalShowsCloseBoxFunction = @convention(c) (Bool) -> Void
+
+private let dfrBundle: CFBundle? = {
+    CFBundleCreate(kCFAllocatorDefault, NSURL(fileURLWithPath: "/System/Library/PrivateFrameworks/DFRFoundation.framework"))
+}()
+
+private let setControlStripPresence: DFRElementSetControlStripPresenceFunction? = {
+    guard let bundle = dfrBundle,
+          let ptr = CFBundleGetFunctionPointerForName(bundle, "DFRElementSetControlStripPresenceForIdentifier" as CFString) else {
+        return nil
+    }
+    return unsafeBitCast(ptr, to: DFRElementSetControlStripPresenceFunction.self)
+}()
+
+private let setShowsCloseBox: DFRSystemModalShowsCloseBoxFunction? = {
+    guard let bundle = dfrBundle,
+          let ptr = CFBundleGetFunctionPointerForName(bundle, "DFRSystemModalShowsCloseBoxWhenFrontMost" as CFString) else {
+        return nil
+    }
+    return unsafeBitCast(ptr, to: DFRSystemModalShowsCloseBoxFunction.self)
+}()
+
 @objc public class TLyricsTouchBarController: NSObject, NSTouchBarDelegate {
     public static let shared = TLyricsTouchBarController()
 
     private var touchBar: NSTouchBar?
+    private var controlStripItem: NSCustomTouchBarItem?
     private var currentLyricLabel: NSTextField?
     private var nextLyricLabel: NSTextField?
     private var playPauseButton: NSButton?
+    private var isSystemModalPresented = false
 
+    private let trayItemIdentifier = NSTouchBarItem.Identifier("com.mac.tlyrics.tray")
     private let prevItemIdentifier = NSTouchBarItem.Identifier("com.mac.tlyrics.prev")
     private let playPauseItemIdentifier = NSTouchBarItem.Identifier("com.mac.tlyrics.playpause")
     private let nextItemIdentifier = NSTouchBarItem.Identifier("com.mac.tlyrics.next")
@@ -24,6 +51,8 @@ func mac_now_playing_send_command(_ cmd: Int32) -> Bool
     public func setupTouchBar() {
         DispatchQueue.main.async { [weak self] in
             guard let self = self else { return }
+
+            // 1. Build the Main NSTouchBar
             let bar = NSTouchBar()
             bar.delegate = self
             bar.customizationIdentifier = NSTouchBar.CustomizationIdentifier("com.mac.tlyrics.touchbar")
@@ -38,10 +67,75 @@ func mac_now_playing_send_command(_ cmd: Int32) -> Bool
             ]
             self.touchBar = bar
 
-            // Attach to application
+            // Attach to application and windows (for foreground focus)
             NSApplication.shared.touchBar = bar
             for window in NSApplication.shared.windows {
                 window.touchBar = bar
+            }
+
+            // 2. Setup System Tray item in the Control Strip (for background persistence)
+            self.setupControlStripItem(with: bar)
+
+            // 3. Immediately present globally as a system modal Touch Bar
+            self.presentGlobalTouchBar()
+        }
+    }
+
+    private func setupControlStripItem(with bar: NSTouchBar) {
+        let tray = NSCustomTouchBarItem(identifier: self.trayItemIdentifier)
+        let btn = NSButton(
+            title: "♪",
+            target: self,
+            action: #selector(self.onTrayIconTapped)
+        )
+        btn.bezelColor = NSColor.systemTeal
+        tray.view = btn
+        self.controlStripItem = tray
+
+        // Register with system tray via private selector
+        let addSelector = NSSelectorFromString("addSystemTrayItem:")
+        if (NSTouchBarItem.self as AnyObject).responds(to: addSelector) {
+            _ = (NSTouchBarItem.self as AnyObject).perform(addSelector, with: tray)
+        }
+
+        // Enable Control Strip presence
+        setControlStripPresence?(self.trayItemIdentifier, true)
+        setShowsCloseBox?(false)
+    }
+
+    @objc public func onTrayIconTapped() {
+        if self.isSystemModalPresented {
+            self.dismissGlobalTouchBar()
+        } else {
+            self.presentGlobalTouchBar()
+        }
+    }
+
+    public func presentGlobalTouchBar() {
+        guard let bar = self.touchBar else { return }
+
+        DispatchQueue.main.async { [weak self] in
+            guard let self = self else { return }
+
+            // Present System Modal Touch Bar over all applications
+            let presentSelector = NSSelectorFromString("presentSystemModalTouchBar:systemTrayItemIdentifier:")
+            if (NSTouchBar.self as AnyObject).responds(to: presentSelector) {
+                _ = (NSTouchBar.self as AnyObject).perform(presentSelector, with: bar, with: self.trayItemIdentifier)
+                self.isSystemModalPresented = true
+            }
+        }
+    }
+
+    public func dismissGlobalTouchBar() {
+        guard let bar = self.touchBar else { return }
+
+        DispatchQueue.main.async { [weak self] in
+            guard let self = self else { return }
+
+            let dismissSelector = NSSelectorFromString("dismissSystemModalTouchBar:")
+            if (NSTouchBar.self as AnyObject).responds(to: dismissSelector) {
+                _ = (NSTouchBar.self as AnyObject).perform(dismissSelector, with: bar)
+                self.isSystemModalPresented = false
             }
         }
     }
@@ -50,16 +144,29 @@ func mac_now_playing_send_command(_ cmd: Int32) -> Bool
         DispatchQueue.main.async { [weak self] in
             guard let self = self else { return }
 
+            let displayCurrent = current.isEmpty ? "♪ TLyrics" : current
+            let displayNext = next.isEmpty ? "" : "‣ \(next)"
+
             if let lbl = self.currentLyricLabel {
-                lbl.stringValue = current.isEmpty ? "♪ TLyrics" : current
+                lbl.stringValue = displayCurrent
             }
             if let nextLbl = self.nextLyricLabel {
-                nextLbl.stringValue = next.isEmpty ? "" : "‣ \(next)"
+                nextLbl.stringValue = displayNext
                 nextLbl.isHidden = next.isEmpty
             }
             if let btn = self.playPauseButton {
                 let iconName = isPlaying ? NSImage.touchBarPauseTemplateName : NSImage.touchBarPlayTemplateName
                 btn.image = NSImage(named: iconName)
+            }
+
+            // Also update the mini Control Strip button title if music is playing
+            if let trayBtn = self.controlStripItem?.view as? NSButton {
+                trayBtn.title = isPlaying ? "♪" : "❚❚"
+            }
+
+            // Ensure the system modal Touch Bar remains presented when playback is active
+            if isPlaying && !self.isSystemModalPresented {
+                self.presentGlobalTouchBar()
             }
         }
     }
@@ -145,6 +252,16 @@ func mac_now_playing_send_command(_ cmd: Int32) -> Bool
 @_cdecl("tlyrics_touchbar_init")
 public func tlyricsTouchBarInit() {
     TLyricsTouchBarController.shared.setupTouchBar()
+}
+
+@_cdecl("tlyrics_touchbar_present_global")
+public func tlyricsTouchBarPresentGlobal() {
+    TLyricsTouchBarController.shared.presentGlobalTouchBar()
+}
+
+@_cdecl("tlyrics_touchbar_dismiss_global")
+public func tlyricsTouchBarDismissGlobal() {
+    TLyricsTouchBarController.shared.dismissGlobalTouchBar()
 }
 
 @_cdecl("tlyrics_touchbar_update")
